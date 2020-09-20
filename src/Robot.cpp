@@ -154,32 +154,99 @@ void Robot::move(MovingDirection dir)
             isFollowingLeftWall_=false;
 }
 
-void Robot::wanderAvoidingCollisions()
-{
-    float linVel=0;
-    float angVel=0;
+#define SLOW_ANGULAR_VELOCITY 0.2
+#define FAST_ANGULAR_VELOCITY 0.8
 
-    //TODO - implement obstacle avoidance
+#define SLOW_LINEAR_VELOCITY 0.2
+#define FAST_LINEAR_VELOCITY 0.4
 
+#define LAST_DISTANCE_THRESHOLD 1
 
+void Robot::wanderAvoidingCollisions() {
+    float linVel = 0;
+    float angVel = 0;
 
+    float minSonar = base.getMinSonarValueInRange(0,7);
+
+    if (minSonar < 0.6) {
+        linVel = 0;
+        angVel = 0.3 + static_cast<float>(rand())/(static_cast<float>(1.2)/(0.9));
+    } else {
+        linVel = 1;
+        angVel = -0.2;
+    }
 
     base.setWheelsVelocity_fromLinAngVelocity(linVel, angVel);
 }
 
-void Robot::wallFollow()
-{
-    float linVel=0;
-    float angVel=0;
+void Robot::wallFollow() {
+    float minLeftLaser  = base.getMinLaserValueInRange(0,74);
+    float minFrontLaser = base.getMinLaserValueInRange(75,105);
+    float minRightLaser = base.getMinLaserValueInRange(106,180);
+    float minAllLasers = base.getMinLaserValueInRange(0, 180);
 
-    if(isFollowingLeftWall_)
-        std::cout << "Following LEFT wall" << std::endl;
+    float linVel = 0;
+    float angVel = 0;
+
+    // Parameters
+    float wallDistance = 1.0;
+    float rushDistance = wallDistance*2;
+    float safeDistance = wallDistance/2;
+
+    // Buffers for integration control
+    int NUMBER_OF_MEASURES = 3;
+    float *leftDistances = (float*) malloc(NUMBER_OF_MEASURES * sizeof(float));
+    float *rightDistances = (float*) malloc(NUMBER_OF_MEASURES * sizeof(float));
+
+    // Rotate integration control buffer
+    for (int i = 0; i < NUMBER_OF_MEASURES-1; i++)
+        leftDistances[i+1] = leftDistances[i];
+    leftDistances[0] = minLeftLaser - wallDistance;
+
+    for(int i = 0; i < NUMBER_OF_MEASURES-1; i++)
+        rightDistances[i+1] = rightDistances[i];
+    rightDistances[0] = minRightLaser - wallDistance;
+
+    // Linear velocity control
+    int isFrontTooClose = minFrontLaser < safeDistance;
+    
+    if (isFrontTooClose)
+        linVel = 0;
     else
-        std::cout << "Following RIGHT wall" << std::endl;
+        linVel = 0.1;
 
-    //TODO - implementar wall following usando PID
+    // Increment speed till find wall faster
+    if (rushDistance*2 < minAllLasers)
+        linVel = 1;
+    
+    // PID control
+    // Constants
+    float tp = 0.001;
+    float td = 0.5;
+    float ti = 0.00012;
 
+    // CTE: CrossTalk Error = SetPoint - ProcessVariable.
+    float CTE = 0;
+    float dCTE = 0;
+    float integral = 0;
 
+    if (leftDistances[0] < rightDistances[0]) { // Left wall closer
+        CTE = leftDistances[0];
+        dCTE = -(CTE - leftDistances[1]);
+        for(int i = 0; i < NUMBER_OF_MEASURES; i++)
+            integral += leftDistances[i];
+        
+    } else if (rightDistances[0] < leftDistances[0]) { // Right wall closer
+        CTE = rightDistances[0];
+        dCTE = CTE - rightDistances[1];
+        for(int i = 0; i < NUMBER_OF_MEASURES; i++)
+            integral += rightDistances[i];
+
+        tp *= -1;
+    }
+
+    //angular velocity (w)
+    angVel = tp*CTE - td*dCTE - ti*integral;
 
     base.setWheelsVelocity_fromLinAngVelocity(linVel, angVel);
 }
