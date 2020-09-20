@@ -288,8 +288,8 @@ void Robot::mappingWithLogOddsUsingLaser()
 
     // TODO: define fixed values of occupancy
     float locc, lfree;
-
-
+    locc = getLogOddsFromOccupancy(0.73);
+    lfree = getLogOddsFromOccupancy(0.42);
 
     // TODO: update cells in the sensors' field-of-view
     // ============================================================================
