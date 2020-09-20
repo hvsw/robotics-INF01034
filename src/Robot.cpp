@@ -272,18 +272,19 @@ void Robot::mappingWithLogOddsUsingLaser()
 
     int scale = grid->getMapScale();
     float maxRange = base.getMaxLaserRange();
-    int maxRangeInt = maxRange*scale;
+    int maxRangeInt = maxRange * scale;
 
-    int robotX=currentPose_.x*scale;
-    int robotY=currentPose_.y*scale;
+    int robotX = currentPose_.x * scale;
+    int robotY = currentPose_.y * scale;
     float robotAngle = currentPose_.theta;
 
     // how to access a grid cell:
-//    Cell* c=grid->getCell(robotX,robotY);
+    // Cell* cell=grid->getCell(robotX,robotY);
 
-    // access log-odds value of variable in c->logodds
+    // access log-odds value of variable in cell->logodds
+
     // how to convert logodds to occupancy values:
-//    c->occupancy = getOccupancyFromLogOdds(c->logodds);
+    // cell->occupancy = getOccupancyFromLogOdds(cell->logodds);
 
     // TODO: define fixed values of occupancy
     float locc, lfree;
