@@ -302,9 +302,44 @@ void Robot::mappingWithLogOddsUsingLaser()
     //                     |                         \                       |
     //  (robotX-maxRangeInt,robotY-maxRangeInt)  -------  (robotX+maxRangeInt,robotY-maxRangeInt)
 
+    // Angulo da celula em relacao ao robo
+    float phi; 
 
+    // Distancia da celula em relacao ao robo (em celulas)
+    int r; 
 
+    // Laser de numero k
+    int k; 
 
+    // Distancia medida do laser (em celulas)
+    int laserCellDistance; 
+    for(int y = robotY-maxRangeInt; y <= robotY+maxRangeInt; y++){
+        for(int x = robotX-maxRangeInt; x <= robotX+maxRangeInt; x++){
+            Cell* cell = grid->getCell(x, y);
+
+            phi = RAD2DEG(atan2(y-robotY, x-robotX)) - robotAngle;
+            phi = normalizeAngleDEG(phi);
+            k = base.getNearestLaserBeam(phi);
+
+            // Checa se estamso dentro do campo de visao
+            if (abs(phi - base.getAngleOfLaserBeam(k)) == 0) { 
+                r = sqrt(pow((x-robotX), 2) + pow((y-robotY), 2));
+
+                // TODO: Precisamos desse if? 
+                // Acho que nao pq ja estamos de um quadrado 2*maxRangeInt x 2*maxRangeInt
+                if (r < maxRangeInt) { // Dentro do alcance
+                    laserCellDistance = base.getKthLaserReading(k) * scale;
+                    if (r < laserCellDistance) { // Antes de um obstaculo
+                        cell->logodds += lfree;
+                        cell->occupancy = getOccupancyFromLogOdds(cell->logodds);
+                    } else if (r == laserCellDistance) { // E um obstaculo
+                        cell->logodds += locc;
+                        cell->occupancy = getOccupancyFromLogOdds(cell->logodds);
+                    }
+                }
+            }
+        }
+    }
 }
 
 void Robot::mappingUsingSonar()
