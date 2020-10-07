@@ -78,7 +78,7 @@ void Planning::resetCellsTypes()
 
 void Planning::updateCellsTypes()
 {
-    Cell* c;
+     Cell* c;
 
     // If you want to access the current cells surrounding the robot, use this range
     //
@@ -104,11 +104,86 @@ void Planning::updateCellsTypes()
     // c->occType = OCCUPIED
     // c->occType = FREE
 
-    // the planning type of a cell can be defined as:
-    // c->planType = REGULAR
-    // c->planType = FRONTIER
-    // c->planType = DANGER
 
+    float occupiedValue = 9;
+    float freeValue = 5;
+    float occToFree = 12;
+
+    for(int x=robotPosition.x-maxUpdateRange;x<=robotPosition.x+maxUpdateRange;x++)
+    {
+        for(int y=robotPosition.y-maxUpdateRange;y<=robotPosition.y+maxUpdateRange;y++)
+        {
+            c = grid->getCell(x,y);
+
+            float log = c->logodds;
+
+            if(log >= occupiedValue && c->occType == UNEXPLORED)
+            {
+                c->occType = OCCUPIED;
+
+            }
+            else if (log <= freeValue && c->occType == UNEXPLORED)
+            {
+                c->occType = FREE;
+
+            }
+            else if (log >= occupiedValue && c->occType == FREE)
+            {
+                c->occType = OCCUPIED;
+
+            }
+            else if (log <= occToFree && c->occType == OCCUPIED)
+            {
+                c->occType = FREE;
+
+            }
+
+
+            // the planning type of a cell can be defined as:
+            // c->planType = REGULAR
+            // c->planType = FRONTIER
+            // c->planType = DANGER
+            Cell *planningCell;
+
+            if (c->occType == OCCUPIED) {
+
+
+                for(int i=x-3; i<=x+3; i++)
+                {
+                    for(int j=y-3; j<=y+3; j++)
+                    {
+                        planningCell = grid->getCell(i,j);
+
+                        if ((x == i && y == j) || planningCell->occType != FREE) {
+                            continue;
+                        }
+
+                        planningCell->planType = DANGER;
+
+                    }
+                }
+
+
+            } else if (c->occType == FREE) {
+
+                for(int i=x-1; i<=x+1; i++)
+                {
+                    for(int j=y-1; j<=y+1; j++)
+                    {
+                        planningCell = grid->getCell(i,j);
+
+                        if ((x == i && y == j) || planningCell->occType != UNEXPLORED) {
+                            continue;
+                        }
+
+                        planningCell->planType = FRONTIER;
+
+                    }
+                }
+
+            }
+        }
+    }
 
 
 
