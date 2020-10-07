@@ -87,9 +87,9 @@ void Robot::run()
     pthread_mutex_lock(grid->mutex);
 
     // Mapping
-    mappingWithHIMMUsingLaser();
+    //mappingWithHIMMUsingLaser();
     mappingWithLogOddsUsingLaser();
-    mappingUsingSonar();
+    //mappingUsingSonar();
 
     pthread_mutex_unlock(grid->mutex);
 
@@ -303,16 +303,16 @@ void Robot::mappingWithLogOddsUsingLaser()
     //  (robotX-maxRangeInt,robotY-maxRangeInt)  -------  (robotX+maxRangeInt,robotY-maxRangeInt)
 
     // Angulo da celula em relacao ao robo
-    float phi; 
+    float phi;
 
     // Distancia da celula em relacao ao robo (em celulas)
-    int r; 
+    int r;
 
     // Laser de numero k
-    int k; 
+    int k;
 
     // Distancia medida do laser (em celulas)
-    int laserCellDistance; 
+    int laserCellDistance;
     for(int y = robotY-maxRangeInt; y <= robotY+maxRangeInt; y++){
         for(int x = robotX-maxRangeInt; x <= robotX+maxRangeInt; x++){
             Cell* cell = grid->getCell(x, y);
@@ -322,10 +322,11 @@ void Robot::mappingWithLogOddsUsingLaser()
             k = base.getNearestLaserBeam(phi);
 
             // Checa se estamso dentro do campo de visao
-            if (abs(phi - base.getAngleOfLaserBeam(k)) == 0) { 
+            // ve se esta apontando para um lugar que tem obstaculo
+            if (abs(phi - base.getAngleOfLaserBeam(k)) < lambda_phi) {
                 r = sqrt(pow((x-robotX), 2) + pow((y-robotY), 2));
 
-                // TODO: Precisamos desse if? 
+                // TODO: Precisamos desse if?
                 // Acho que nao pq ja estamos de um quadrado 2*maxRangeInt x 2*maxRangeInt
                 if (r < maxRangeInt) { // Dentro do alcance
                     laserCellDistance = base.getKthLaserReading(k) * scale;
