@@ -87,9 +87,9 @@ void Robot::run()
     pthread_mutex_lock(grid->mutex);
 
     // Mapping
-    //mappingWithHIMMUsingLaser();
+    mappingWithHIMMUsingLaser();
     mappingWithLogOddsUsingLaser();
-    //mappingUsingSonar();
+    mappingUsingSonar();
 
     pthread_mutex_unlock(grid->mutex);
 
@@ -278,6 +278,10 @@ void Robot::mappingWithLogOddsUsingLaser()
     int robotY = currentPose_.y * scale;
     float robotAngle = currentPose_.theta;
 
+    float locc, lfree;
+    locc = getLogOddsFromOccupancy(0.75);
+    lfree = getLogOddsFromOccupancy(0.45);
+    
     // how to access a grid cell:
     // Cell* cell=grid->getCell(robotX,robotY);
 
@@ -286,12 +290,6 @@ void Robot::mappingWithLogOddsUsingLaser()
     // how to convert logodds to occupancy values:
     // cell->occupancy = getOccupancyFromLogOdds(cell->logodds);
 
-    // TODO: define fixed values of occupancy
-    float locc, lfree;
-    locc = getLogOddsFromOccupancy(0.73);
-    lfree = getLogOddsFromOccupancy(0.42);
-
-    // TODO: update cells in the sensors' field-of-view
     // ============================================================================
     // you only need to check the cells at most maxRangeInt from the robot position
     // that is, in the following square region:
@@ -301,39 +299,26 @@ void Robot::mappingWithLogOddsUsingLaser()
     //                     |                        \                        |
     //                     |                         \                       |
     //  (robotX-maxRangeInt,robotY-maxRangeInt)  -------  (robotX+maxRangeInt,robotY-maxRangeInt)
-
-    // Angulo da celula em relacao ao robo
-    float phi;
-
-    // Distancia da celula em relacao ao robo (em celulas)
-    int r;
-
-    // Laser de numero k
-    int k;
-
-    // Distancia medida do laser (em celulas)
-    int laserCellDistance;
-    for(int y = robotY-maxRangeInt; y <= robotY+maxRangeInt; y++){
-        for(int x = robotX-maxRangeInt; x <= robotX+maxRangeInt; x++){
+    
+    for( int y = robotY - maxRangeInt; y <= robotY + maxRangeInt; y++){
+        for(int x = robotX - maxRangeInt; x <= robotX + maxRangeInt; x++){
             Cell* cell = grid->getCell(x, y);
 
-            phi = RAD2DEG(atan2(y-robotY, x-robotX)) - robotAngle;
+            float phi = RAD2DEG(atan2(y-robotY, x-robotX)) - robotAngle; //ângulo em relação ao robô
             phi = normalizeAngleDEG(phi);
-            k = base.getNearestLaserBeam(phi);
+            int k = base.getNearestLaserBeam(phi); // nº do laser
 
-            // Checa se estamso dentro do campo de visao
-            // ve se esta apontando para um lugar que tem obstaculo
+            // verifica se está dentro da área de visão
             if (abs(phi - base.getAngleOfLaserBeam(k)) < lambda_phi) {
-                r = sqrt(pow((x-robotX), 2) + pow((y-robotY), 2));
+                int r = sqrt(pow((x - robotX), 2) + pow(( y - robotY), 2)); //distância da célula em relação ao robô
 
-                // TODO: Precisamos desse if?
-                // Acho que nao pq ja estamos de um quadrado 2*maxRangeInt x 2*maxRangeInt
                 if (r < maxRangeInt) { // Dentro do alcance
-                    laserCellDistance = base.getKthLaserReading(k) * scale;
-                    if (r < laserCellDistance) { // Antes de um obstaculo
+                    int laserCellDistance = base.getKthLaserReading(k) * scale;
+                    
+                    if (r < laserCellDistance) { // medida antes de obstáculo
                         cell->logodds += lfree;
                         cell->occupancy = getOccupancyFromLogOdds(cell->logodds);
-                    } else if (r == laserCellDistance) { // E um obstaculo
+                    } else if (r == laserCellDistance) { // medida no obstáculo
                         cell->logodds += locc;
                         cell->occupancy = getOccupancyFromLogOdds(cell->logodds);
                     }
@@ -345,10 +330,8 @@ void Robot::mappingWithLogOddsUsingLaser()
 
 void Robot::mappingUsingSonar()
 {
-    // TODO: update cells in the sensors' field-of-view
-    // Follow the example in mappingWithLogOddsUsingLaser()
-    float lambda_r = 0.5; //  10 cm
-    float lambda_phi = 30;  // 30 degrees
+    float lambda_r = 0.5;
+    float lambda_phi = 30;
 
     int scale = grid->getMapScale();
     float maxRange = base.getMaxSonarRange();
@@ -358,32 +341,33 @@ void Robot::mappingUsingSonar()
     int robotY=currentPose_.y*scale;
     float robotAngle = currentPose_.theta;
 
-    for(int x=robotX-maxRangeInt; x<robotX+maxRangeInt; x++)
-        for(int y=robotY-maxRangeInt; y<robotY+maxRangeInt; y++){
-            Cell* c=grid->getCell(x,y);
-
-            float r = sqrt(pow(-robotX+x,2) + pow(-robotY+y,2)); // distancia medida
-            float phi = RAD2DEG(atan2(-robotY+y, -robotX+x)) - robotAngle; //angulo da celula em relacao ao robo
-
-            phi = normalizeAngleDEG(phi);
-            float r_m = r/scale;                       //dist em metros
-            float k = base.getNearestSonarBeam(phi);    //closest beam
-            float k_angle = base.getAngleOfSonarBeam(k);
-            float k_reading = base.getKthSonarReading(k);
+    for(int x = robotX - maxRangeInt; x < robotX + maxRangeInt; x++)
+        for(int y = robotY - maxRangeInt; y < robotY + maxRangeInt; y++){
+            Cell* c = grid->getCell(x,y);
+            
+            float r = sqrt(pow(x - robotX,2) + pow(y - robotY,2)); //distância r medida
+            float rMeters = r/scale;   //distância em metros
+            
+            float phi = RAD2DEG(atan2(y - robotY, x - robotX)) - robotAngle; //ângulo medido
+            float phiNormalized = normalizeAngleDEG(phi); // ângulo normalizado
+            
+            float k = base.getNearestLaserBeam(phiNormalized); // laser mais próximo da medida
+            float kAngle = base.getAngleOfLaserBeam(k); // ângulo do laser mais próximo
+            float kReading = base.getKthLaserReading(k); // leitura do laser mais próximo
 
             float beta = lambda_phi/2;
-            float murphyUpdate = ((maxRangeInt - r_m)/maxRangeInt + (beta - fabs(phi - k_angle))/beta)/2 ;
+            float murphyUpdate = ((maxRangeInt - rMeters)/maxRangeInt + (beta - fabs(phiNormalized - kAngle))/beta)/2 ;
 
             float occUpdate = 0.0;
 
-            if((r_m > std::min(((lambda_r/2) + k_reading), (float) maxRange)) || (fabs(phi - k_angle) > lambda_phi/2)){
-                occUpdate = 0.5; //unknown
+            if((rMeters > std::min(((lambda_r/2) + kReading), (float) maxRange)) || (fabs(phiNormalized - kAngle) > lambda_phi/2)){
+                occUpdate = 0.5; // desconhecido
             }
-            else if((k_reading < maxRangeInt) && (fabs(k_reading - r_m) < lambda_r/2)){
-                occUpdate = lambda_r*(murphyUpdate) + lambda_r; //occ
+            else if((kReading < maxRangeInt) && (fabs(kReading - rMeters) < lambda_r/2)){
+                occUpdate = lambda_r*(murphyUpdate) + lambda_r; // ocupado
             }
-            else if(r_m <= k_reading){
-                occUpdate = lambda_r*(1.0 - murphyUpdate); //free
+            else if(rMeters <= kReading){
+                occUpdate = lambda_r*(1.0 - murphyUpdate); // livre
             }
 
             float numerador = occUpdate*c->occupancySonar;
@@ -404,55 +388,57 @@ void Robot::mappingUsingSonar()
 
 void Robot::mappingWithHIMMUsingLaser()
 {
-     // TODO: update cells in the sensors' field-of-view
-    // Follow the example in mappingWithLogOddsUsingLaser()
-    float lambda_r = 0.2; //  10 cm
-    float lambda_phi = 1.0;  // 0.5 degrees
+    
+    float lambda_r = 0.2;
+    float lambda_phi = 1.0;
     
     int scale = grid->getMapScale();
     float maxRange = base.getMaxLaserRange();
     int maxRangeInt = maxRange*scale;
     
-    int robotX=currentPose_.x*scale;
-    int robotY=currentPose_.y*scale;
+    int robotX = currentPose_.x*scale;
+    int robotY = currentPose_.y*scale;
     float robotAngle = currentPose_.theta;
     
-    // TODO: define fixed values of occupancy
-    float pocc = 0.55, pfree = 0.3;
-    float locc = log(pocc/(1-pocc)), lfree = log(pfree/(1-pfree));
+    float pocc = 0.6;
+    float pfree = 0.38;
+    float locc = log(pocc/(1-pocc));
+    float lfree = log(pfree/(1-pfree));
     
-    for(int i=robotX-maxRangeInt; i<robotX+maxRangeInt; i++)
-        for(int j=robotY-maxRangeInt; j<robotY+maxRangeInt; j++){
-            Cell* c=grid->getCell(i,j);
+    for(int x = robotX - maxRangeInt; x < robotX + maxRangeInt; x++)
+        for(int y = robotY - maxRangeInt; y < robotY + maxRangeInt; y++){
+            Cell* c = grid->getCell(x,y);
             
-            float r = sqrt(pow(-robotX+i,2) + pow(-robotY+j,2)); //dist
-            float phi = RAD2DEG(atan2(-robotY+j, -robotX+i)) - robotAngle; //angulo
+            float r = sqrt(pow(x - robotX,2) + pow(y - robotY,2)); //distância r medida
+            float rMeters = r/scale; //distância em metros
             
-            phi = normalizeAngleDEG(phi);
-            float r_m = r/scale;                       //dist em metros
-            float k= base.getNearestLaserBeam(phi);    //closest beam
-            float k_angle = base.getAngleOfLaserBeam(k);
-            float k_reading = base.getKthLaserReading(k);
+            float phi = RAD2DEG(atan2(x - robotX, y - robotY)) - robotAngle; //ângulo medido
+            float phiNormalized = normalizeAngleDEG(phi); // ângulo normalizado
             
-            if((r_m > std::min(((lambda_r/2) + k_reading), (float) maxRange)) || (fabs(phi - k_angle) > lambda_phi/2)){
+            float k = base.getNearestLaserBeam(phiNormalized); // laser mais próximo da medida
+            float kAngle = base.getAngleOfLaserBeam(k); // ângulo do laser mais próximo
+            float kReading = base.getKthLaserReading(k); // leitura do laser mais próximo
+            
+            if ((rMeters > std::min(((lambda_r/2) + kReading), (float) maxRange)) ||
+               (fabs(phiNormalized - kAngle) > lambda_phi/2)) {
                 c->himm += 0.0;
             }
-            else if((k_reading < maxRange) && (fabs(k_reading - r_m) < lambda_r/2)){
+            else if((kReading < maxRange) &&
+                    (fabs(kReading - rMeters) < lambda_r/2)) {
                 if(c->himm < 13)
                     c->himm += 3.0;
                 else
                     c->himm = 15.0;
             }
-            else if(r_m <= k_reading){
+            else if(rMeters <= kReading){
                 if(c->himm == 0)
-                    c->himm == 0.0;
+                    c->himm = 0.0;
                 else
                     c->himm -= 1.0;
             }
             
             c->occupancy = getOccupancyFromLogOdds(c->himm);
         }
-
 }
 
 /////////////////////////////////////////////////////
