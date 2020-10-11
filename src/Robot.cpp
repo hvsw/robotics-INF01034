@@ -209,7 +209,7 @@ void Robot::wallFollow() {
 
     // Linear velocity control
     int isFrontTooClose = minFrontLaser < safeDistance;
-    
+
     if (isFrontTooClose)
         linVel = 0;
     else
@@ -218,7 +218,7 @@ void Robot::wallFollow() {
     // Increment speed till find wall faster
     if (rushDistance*2 < minAllLasers)
         linVel = 1;
-    
+
     // PID control
     // Constants
     float tp = 0.001;
@@ -235,7 +235,7 @@ void Robot::wallFollow() {
         dCTE = -(CTE - leftDistances[1]);
         for(int i = 0; i < NUMBER_OF_MEASURES; i++)
             integral += leftDistances[i];
-        
+
     } else if (rightDistances[0] < leftDistances[0]) { // Right wall closer
         CTE = rightDistances[0];
         dCTE = CTE - rightDistances[1];
@@ -281,7 +281,7 @@ void Robot::mappingWithLogOddsUsingLaser()
     float locc, lfree;
     locc = getLogOddsFromOccupancy(0.75);
     lfree = getLogOddsFromOccupancy(0.45);
-    
+
     // how to access a grid cell:
     // Cell* cell=grid->getCell(robotX,robotY);
 
@@ -299,7 +299,7 @@ void Robot::mappingWithLogOddsUsingLaser()
     //                     |                        \                        |
     //                     |                         \                       |
     //  (robotX-maxRangeInt,robotY-maxRangeInt)  -------  (robotX+maxRangeInt,robotY-maxRangeInt)
-    
+
     for( int y = robotY - maxRangeInt; y <= robotY + maxRangeInt; y++){
         for(int x = robotX - maxRangeInt; x <= robotX + maxRangeInt; x++){
             Cell* cell = grid->getCell(x, y);
@@ -314,7 +314,7 @@ void Robot::mappingWithLogOddsUsingLaser()
 
                 if (r < maxRangeInt) { // Dentro do alcance
                     int laserCellDistance = base.getKthLaserReading(k) * scale;
-                    
+
                     if (r < laserCellDistance) { // medida antes de obstáculo
                         cell->logodds += lfree;
                         cell->occupancy = getOccupancyFromLogOdds(cell->logodds);
@@ -344,16 +344,16 @@ void Robot::mappingUsingSonar()
     for(int x = robotX - maxRangeInt; x < robotX + maxRangeInt; x++)
         for(int y = robotY - maxRangeInt; y < robotY + maxRangeInt; y++){
             Cell* c = grid->getCell(x,y);
-            
+
             float r = sqrt(pow(x - robotX,2) + pow(y - robotY,2)); //distância r medida
             float rMeters = r/scale;   //distância em metros
-            
+
             float phi = RAD2DEG(atan2(y - robotY, x - robotX)) - robotAngle; //ângulo medido
             float phiNormalized = normalizeAngleDEG(phi); // ângulo normalizado
-            
-            float k = base.getNearestLaserBeam(phiNormalized); // laser mais próximo da medida
-            float kAngle = base.getAngleOfLaserBeam(k); // ângulo do laser mais próximo
-            float kReading = base.getKthLaserReading(k); // leitura do laser mais próximo
+
+            float k = base.getNearestSonarBeam(phiNormalized); // laser mais próximo da medida
+            float kAngle = base.getAngleOfSonarBeam(k); // ângulo do laser mais próximo
+            float kReading = base.getKthSonarReading(k); // leitura do laser mais próximo
 
             float beta = lambda_phi/2;
             float murphyUpdate = ((maxRangeInt - rMeters)/maxRangeInt + (beta - fabs(phiNormalized - kAngle))/beta)/2 ;
@@ -388,37 +388,37 @@ void Robot::mappingUsingSonar()
 
 void Robot::mappingWithHIMMUsingLaser()
 {
-    
+
     float lambda_r = 0.2;
     float lambda_phi = 1.0;
-    
+
     int scale = grid->getMapScale();
     float maxRange = base.getMaxLaserRange();
     int maxRangeInt = maxRange*scale;
-    
+
     int robotX = currentPose_.x*scale;
     int robotY = currentPose_.y*scale;
     float robotAngle = currentPose_.theta;
-    
-    float pocc = 0.6;
-    float pfree = 0.38;
+
+    float pocc = 0.55;
+    float pfree = 0.3;
     float locc = log(pocc/(1-pocc));
     float lfree = log(pfree/(1-pfree));
-    
+
     for(int x = robotX - maxRangeInt; x < robotX + maxRangeInt; x++)
         for(int y = robotY - maxRangeInt; y < robotY + maxRangeInt; y++){
             Cell* c = grid->getCell(x,y);
-            
+
             float r = sqrt(pow(x - robotX,2) + pow(y - robotY,2)); //distância r medida
             float rMeters = r/scale; //distância em metros
-            
-            float phi = RAD2DEG(atan2(x - robotX, y - robotY)) - robotAngle; //ângulo medido
+
+            float phi = RAD2DEG(atan2(y - robotY, x - robotX)) - robotAngle; //ângulo medido
             float phiNormalized = normalizeAngleDEG(phi); // ângulo normalizado
-            
+
             float k = base.getNearestLaserBeam(phiNormalized); // laser mais próximo da medida
             float kAngle = base.getAngleOfLaserBeam(k); // ângulo do laser mais próximo
             float kReading = base.getKthLaserReading(k); // leitura do laser mais próximo
-            
+
             if ((rMeters > std::min(((lambda_r/2) + kReading), (float) maxRange)) ||
                (fabs(phiNormalized - kAngle) > lambda_phi/2)) {
                 c->himm += 0.0;
@@ -436,7 +436,7 @@ void Robot::mappingWithHIMMUsingLaser()
                 else
                     c->himm -= 1.0;
             }
-            
+
             c->occupancy = getOccupancyFromLogOdds(c->himm);
         }
 }
@@ -547,3 +547,4 @@ void Robot::waitTime(float t){
     }while(l < t);
     controlTimer.startLap();
 }
+

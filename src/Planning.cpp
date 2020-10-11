@@ -96,16 +96,16 @@ void Planning::updateCellsTypes()
     //                  |                       \                    |
     //  (gridLimits.minX, gridLimits.minY)  -------  (gridLimits.maxX, gridLimits.minY)
 
-    float occupiedValue = 10;
+    float occupiedValue = 9;
     float freeValue = 5;
-    float occToFree = 15;
+    float occToFree = 12;
 
     for(int x = robotPosition.x - maxUpdateRange; x <= robotPosition.x + maxUpdateRange; x++)
     {
         for(int y = robotPosition.y - maxUpdateRange; y <= robotPosition.y + maxUpdateRange; y++)
         {
             Cell* c;
-            
+
             c = grid->getCell(x,y);
 
             float log = c->logodds;
@@ -132,7 +132,7 @@ void Planning::updateCellsTypes()
             else if (log <= occToFree && c->occType == OCCUPIED)
             {
                 c->occType = FREE;
-                
+
             }
 
 
@@ -180,4 +180,5 @@ void Planning::updateCellsTypes()
         }
     }
 }
+
 
