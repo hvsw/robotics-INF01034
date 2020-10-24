@@ -216,15 +216,10 @@ void Planning::updateCellsTypes()
     }
 }
 
+void Planning::initializePotentials()
+{
+    Cell *c;
 
-enum Potencial {
-    Harmonico, Preferencias, ObjetivosDinamicos
-};
-
-void Planning::initializePotentials() {
-    int METODO_HARMONICO = 0;
-    int METODO_preferencias = 1;
-    int OBJETIVOS_DINAMICOS = 2;
     // the potential of a cell is stored in:
     // c->pot[i]
     // the preference of a cell is stored in:
@@ -237,24 +232,6 @@ void Planning::initializePotentials() {
     //                  |                      \                     |
     //                  |                       \                    |
     //  (gridLimits.minX, gridLimits.minY)  -------  (gridLimits.maxX, gridLimits.minY)
-
-    Cell *c;
-    for(int i = curPose.x - radius; i <= curPose.x + radius; i++) {
-        for(int j = curPose.y - radius; j <= curPose.y + radius; j++) {
-            c = grid->getCell(i,j);
-
-            if(c->type == OCCUPIED || c->planType == DANGER)
-                c->pot = 1.0;
-            else if(c->type == UNEXPLORED)
-                c->pot = 0.0;
-
-
-
-            c->pref = curPref;
-        }
-    }
-
-
 }
 
 void Planning::iteratePotentials()
