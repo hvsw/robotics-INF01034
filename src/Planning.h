@@ -48,6 +48,8 @@ class Planning {
         void iterateDistortedPotentials();
 
         void updateGradient();
+        void classificarOccType(Cell *c);
+        void classificarPlanType(Cell *c, int cellX, int cellY);
 
         point2d robotPosition;
         bbox gridLimits;

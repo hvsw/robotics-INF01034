@@ -87,10 +87,99 @@ void Planning::resetCellsTypes()
     }
 }
 
+void Planning::classificarPlanType(Cell *c, int cellX, int cellY) {
+    int size;
+    Cell *planningCell;
+    if (c->occType == OCCUPIED) {
+        size = 3;
+        for (int xInRange = cellX-size; xInRange <= cellX+size; xInRange++) {
+            for (int yInRange = cellY-size; yInRange <= cellY+size; yInRange++) {
+                bool isCurrentCell = (xInRange == cellX && yInRange == cellY);
+                if (isCurrentCell) {
+                    continue;
+                }
+                
+                planningCell = grid->getCell(xInRange, yInRange);
+                
+                if (planningCell->occType == FREE) {
+                    planningCell->planType = DANGER;
+                }
+            }
+        }
+        
+        size = 8;
+        for (int xInRange = cellX-size; xInRange <= cellX+size; xInRange++) {
+            for (int yInRange = cellY-size; yInRange <= cellY+size; yInRange++) {
+                bool isCurrentCell = (xInRange == cellX && yInRange == cellY);
+                if (isCurrentCell) {
+                    continue;
+                }
+                
+                planningCell = grid->getCell(xInRange, yInRange);
+                
+                if (planningCell->occType == FREE && planningCell->planType != DANGER) {
+                    planningCell->planType = NEAR_WALLS;
+                }
+            }
+        }
+    }
+    
+    size = 1;
+    if (c->occType == FREE) {
+        for (int xInRange = cellX-size; xInRange <= cellX+size; xInRange++) {
+            for (int yInRange = cellY-size; yInRange <= cellY+size; yInRange++) {
+                bool isCurrentCell = (xInRange == cellX && yInRange == cellY);
+                if (isCurrentCell) {
+                    continue;
+                }
+                
+                planningCell = grid->getCell(xInRange, yInRange);
+                
+                if (planningCell->occType == UNEXPLORED) {
+                    planningCell->planType = FRONTIER;
+                    
+                    for (int i = cellX-8; i <= xInRange+8; i++) {
+                        for (int j = cellY-8; j <= cellY+8; j++) {
+                            bool isCurrentCell = (i == xInRange && j == yInRange);
+                            if (isCurrentCell) {
+                                continue;
+                            }
+                            
+                            Cell *otherPlanningCell = grid->getCell(i, j);
+                            if (otherPlanningCell->occType == OCCUPIED) {
+                                planningCell->planType = FRONTIER_NEAR_WALL;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void Planning::classificarOccType(Cell *c) {
+    float unexploredToOccThreshold = 9;
+    float unexploredToFreeThreshold = 5;
+    float freeToOccThreshold = 9;
+    float occToFreeThreshold = 12;
+    
+    float himmReading = c->himm;
+    
+    //classify cells
+    if(himmReading >= unexploredToOccThreshold && c->occType == UNEXPLORED) {
+        c->occType = OCCUPIED;
+    } else if (himmReading <= unexploredToFreeThreshold && c->occType == UNEXPLORED) {
+        c->occType = FREE;
+    } else if (himmReading >= freeToOccThreshold && c->occType == FREE) {
+        c->occType = OCCUPIED;
+    } else if (himmReading <= occToFreeThreshold && c->occType == OCCUPIED) {
+        c->occType = FREE;
+    }
+}
+
 void Planning::updateCellsTypes()
 {
-    Cell* c;
-
+    
     // If you want to access all observed cells (since the start), use this range
     //
     //  (gridLimits.minX, gridLimits.maxY)  -------  (gridLimits.maxX, gridLimits.maxY)
@@ -98,95 +187,31 @@ void Planning::updateCellsTypes()
     //                  |                      \                     |
     //                  |                       \                    |
     //  (gridLimits.minX, gridLimits.minY)  -------  (gridLimits.maxX, gridLimits.minY)
-
-    // TODO: classify cells
-
+    
     // the occupancy type of a cell can be defined as:
     // c->occType = UNEXPLORED
     // c->occType = OCCUPIED
     // c->occType = FREE
-
+    
     // the planning type of a cell can be defined as:
     // c->planType = REGULAR
     // c->planType = FRONTIER
     // c->planType = DANGER
     // c->planType = NEAR_WALLS
     // c->planType = FRONTIER_NEAR_WALL
-
-    float occupiedValue = 9;
-    float freeValue = 5;
-    float occToFree = 12;
-
-    for(int x = robotPosition.x - maxUpdateRange; x <= robotPosition.x + maxUpdateRange; x++)
-    {
-        for(int y = robotPosition.y - maxUpdateRange; y <= robotPosition.y + maxUpdateRange; y++)
-        {
-            Cell* c;
-
-            c = grid->getCell(x,y);
-
-            float log = c->logodds;
-
-            // the occupancy type of a cell can be defined as:
-            // c->occType = UNEXPLORED
-            // c->occType = OCCUPIED
-            // c->occType = FREE
-            if(log >= occupiedValue && c->occType == UNEXPLORED)
-            {
-                c->occType = OCCUPIED;
-
-            }
-            else if (log <= freeValue && c->occType == UNEXPLORED)
-            {
-                c->occType = FREE;
-
-            }
-            else if (log >= occupiedValue && c->occType == FREE)
-            {
-                c->occType = OCCUPIED;
-
-            }
-            else if (log <= occToFree && c->occType == OCCUPIED)
-            {
-                c->occType = FREE;
-
-            }
-
-
-            // the planning type of a cell can be defined as:
-            // c->planType = REGULAR
-            // c->planType = FRONTIER
-            // c->planType = DANGER
-            Cell *planningCell;
-
-            for(int i = x-8; i <= x+8; i++) {
-                for(int j = y-8; j <= y+8; j++) {
-                    bool isCurrentCell = (x == i && y == j);
-                    if (isCurrentCell) {
-                        continue;
-                    }
-
-                    planningCell = grid->getCell(i, j);
-                    int virtualX = i-x;
-                    int virtualY = j-y;
-
-                    switch (planningCell->occType) {
-                    case FREE:
-                        if (abs(virtualX) < 3 && abs(virtualY) < 3) {
-                            planningCell->planType = DANGER;
-                        } else {
-                            planningCell->planType = NEAR_WALLS;
-                        }
-
-                    case UNEXPLORED:
-                        if (abs(virtualX) > 3 && abs(virtualY) > 3) {
-                            planningCell->planType = FRONTIER_NEAR_WALL;
-                        } else if (abs(virtualX) < 1 && abs(virtualY) < 1) {
-                            planningCell->planType = FRONTIER;
-                        }
-                    }
-                }
-            }
+    
+    Cell *cellInUpdateRange;
+    for (int xInUpdateRange = gridLimits.minX; xInUpdateRange <= gridLimits.maxX; xInUpdateRange++) {
+        for (int yInUpdateRange = gridLimits.minY; yInUpdateRange <= gridLimits.maxY; yInUpdateRange++) {
+            cellInUpdateRange = grid->getCell(xInUpdateRange, yInUpdateRange);
+            classificarOccType(cellInUpdateRange);
+        }
+    }
+    
+    for (int xInUpdateRange = gridLimits.minX; xInUpdateRange <= gridLimits.maxX; xInUpdateRange++) {
+        for (int yInUpdateRange = gridLimits.minY; yInUpdateRange <= gridLimits.maxY; yInUpdateRange++) {
+            cellInUpdateRange = grid->getCell(xInUpdateRange, yInUpdateRange);
+            classificarPlanType(cellInUpdateRange, xInUpdateRange, yInUpdateRange);
         }
     }
 }
