@@ -108,6 +108,15 @@ void Robot::run()
         case WALLFOLLOW:
             wallFollow();
             break;
+        case POTFIELD_0:
+            followPotentialField(0);
+            break;
+        case POTFIELD_1:
+            followPotentialField(1);
+            break;
+        case POTFIELD_2:
+            followPotentialField(2);
+            break;
         case ENDING:
             running_=false;
             break;
@@ -147,22 +156,18 @@ void Robot::move(MovingDirection dir)
         base.setMovementSimple(dir);
     else if(motionMode_==MANUAL_VEL)
         base.setMovementVel(dir);
-    else if(motionMode_=WALLFOLLOW)
+    else if(motionMode_==WALLFOLLOW)
         if(dir==LEFT)
             isFollowingLeftWall_=true;
         else if(dir==RIGHT)
             isFollowingLeftWall_=false;
+
+
+
 }
 
-#define SLOW_ANGULAR_VELOCITY 0.2
-#define FAST_ANGULAR_VELOCITY 0.8
-
-#define SLOW_LINEAR_VELOCITY 0.2
-#define FAST_LINEAR_VELOCITY 0.4
-
-#define LAST_DISTANCE_THRESHOLD 1
-
-void Robot::wanderAvoidingCollisions() {
+void Robot::wanderAvoidingCollisions()
+{
     float linVel = 0;
     float angVel = 0;
 
@@ -250,6 +255,28 @@ void Robot::wallFollow() {
 
     base.setWheelsVelocity_fromLinAngVelocity(linVel, angVel);
 }
+
+void Robot::followPotentialField(int t)
+{
+    int scale = grid->getMapScale();
+    int robotX=currentPose_.x*scale;
+    int robotY=currentPose_.y*scale;
+    float robotAngle = currentPose_.theta;
+
+    // how to access the grid cell associated to the robot position
+    Cell* c=grid->getCell(robotX,robotY);
+
+    float linVel, angVel;
+
+    // TODO: define the robot velocities using a control strategy
+    //       based on the direction of the gradient of c given by c->dirX[t] and c->dirY[t]
+
+
+
+
+    base.setWheelsVelocity_fromLinAngVelocity(linVel,angVel);
+}
+
 
 ///////////////////////////
 ///// MAPPING METHODS /////
@@ -547,4 +574,3 @@ void Robot::waitTime(float t){
     }while(l < t);
     controlTimer.startLap();
 }
-
