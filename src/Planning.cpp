@@ -160,18 +160,23 @@ void Planning::updateCellsTypes()
             Cell *planningCell;
 
             if (c->occType == OCCUPIED) {
-
-                for(int i = x-3; i <= x+3; i++)
+                87654321X12345678
+                for(int i = x-8; i <= x+8; i++)
                 {
-                    for(int j = y-3; j <= y+3; j++)
+                    for(int j = y-8; j <= y+8; j++)
                     {
                         planningCell = grid->getCell(i,j);
 
-                        if ((x == i && y == j) || planningCell->occType != FREE) {
+                        bool isCurrentCell = (x == i && y == j);
+                        if (isCurrentCell || planningCell->occType != FREE) {
                             continue;
                         }
 
-                        planningCell->planType = DANGER;
+                        if (abs(8-i-x) < 3 && abs(8-j-y) < 3) {
+                            planningCell->planType = DANGER;
+                        } else {
+                            planningCell->planType = NEAR_WALLS;
+                        }
 
                     }
                 }
@@ -198,9 +203,15 @@ void Planning::updateCellsTypes()
     }
 }
 
-void Planning::initializePotentials() {
-    Cell *c;
 
+enum Potencial {
+    Harmonico, Preferencias, ObjetivosDinamicos
+};
+
+void Planning::initializePotentials() {
+    int METODO_HARMONICO = 0;
+    int METODO_preferencias = 1;
+    int OBJETIVOS_DINAMICOS = 2;
     // the potential of a cell is stored in:
     // c->pot[i]
     // the preference of a cell is stored in:
@@ -214,7 +225,21 @@ void Planning::initializePotentials() {
     //                  |                       \                    |
     //  (gridLimits.minX, gridLimits.minY)  -------  (gridLimits.maxX, gridLimits.minY)
 
+    Cell *c;
+    for(int i = curPose.x - radius; i <= curPose.x + radius; i++) {
+        for(int j = curPose.y - radius; j <= curPose.y + radius; j++) {
+            c = grid->getCell(i,j);
 
+            if(c->type == OCCUPIED || c->planType == DANGER)
+                c->pot = 1.0;
+            else if(c->type == UNEXPLORED)
+                c->pot = 0.0;
+
+
+
+            c->pref = curPref;
+        }
+    }
 
 
 }
