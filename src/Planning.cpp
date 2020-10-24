@@ -198,6 +198,27 @@ void Planning::updateCellsTypes()
     }
 }
 
+void Planning::initializePotentials() {
+    Cell *c;
+
+    // the potential of a cell is stored in:
+    // c->pot[i]
+    // the preference of a cell is stored in:
+    // c->pref
+
+    // TODO: initialize the potential field in the known map
+    //
+    //  (gridLimits.minX, gridLimits.maxY)  -------  (gridLimits.maxX, gridLimits.maxY)
+    //                  |                     \                      |
+    //                  |                      \                     |
+    //                  |                       \                    |
+    //  (gridLimits.minX, gridLimits.minY)  -------  (gridLimits.maxX, gridLimits.minY)
+
+
+
+
+}
+
 void Planning::iteratePotentials()
 {
     Cell* c;
