@@ -159,45 +159,33 @@ void Planning::updateCellsTypes()
             // c->planType = DANGER
             Cell *planningCell;
 
-            if (c->occType == OCCUPIED) {
-                87654321X12345678
-                for(int i = x-8; i <= x+8; i++)
-                {
-                    for(int j = y-8; j <= y+8; j++)
-                    {
-                        planningCell = grid->getCell(i,j);
+            for(int i = x-8; i <= x+8; i++) {
+                for(int j = y-8; j <= y+8; j++) {
+                    bool isCurrentCell = (x == i && y == j);
+                    if (isCurrentCell) {
+                        continue;
+                    }
 
-                        bool isCurrentCell = (x == i && y == j);
-                        if (isCurrentCell || planningCell->occType != FREE) {
-                            continue;
-                        }
+                    planningCell = grid->getCell(i, j);
+                    int virtualX = i-x;
+                    int virtualY = j-y;
 
-                        if (abs(8-i-x) < 3 && abs(8-j-y) < 3) {
+                    switch (planningCell->occType) {
+                    case FREE:
+                        if (abs(virtualX) < 3 && abs(virtualY) < 3) {
                             planningCell->planType = DANGER;
                         } else {
                             planningCell->planType = NEAR_WALLS;
                         }
 
-                    }
-                }
-
-            } else if (c->occType == FREE) {
-
-                for(int i = x-1; i <= x+1; i++)
-                {
-                    for(int j = y-1; j <= y+1; j++)
-                    {
-                        planningCell = grid->getCell(i,j);
-
-                        if ((x == i && y == j) || planningCell->occType != UNEXPLORED) {
-                            continue;
+                    case UNEXPLORED:
+                        if (abs(virtualX) > 3 && abs(virtualY) > 3) {
+                            planningCell->planType = FRONTIER_NEAR_WALL;
+                        } else if (abs(virtualX) < 1 && abs(virtualY) < 1) {
+                            planningCell->planType = FRONTIER;
                         }
-
-                        planningCell->planType = FRONTIER;
-
                     }
                 }
-
             }
         }
     }
