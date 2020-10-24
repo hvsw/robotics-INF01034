@@ -50,6 +50,12 @@ class Planning {
         void updateGradient();
         void classificarOccType(Cell *c);
         void classificarPlanType(Cell *c, int cellX, int cellY);
+        void initializeCellPreference(Cell *cell);
+        void initializeCellPotential(Cell *cell);
+        float potencialHarmonico(int cellX, int cellY, int potentialType);
+        float potencialPreferencias(int cellX, int cellY);
+        float gradientX(int potentialType, int cellX, int cellY);
+        float gradientY(int potentialType, int cellX, int cellY);
 
         point2d robotPosition;
         bbox gridLimits;

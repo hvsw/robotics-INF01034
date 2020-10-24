@@ -216,34 +216,110 @@ void Planning::updateCellsTypes()
     }
 }
 
+void Planning::initializeCellPotential(Cell *cell) {
+    if (cell->occType == OCCUPIED || cell->planType == DANGER) {
+        cell->pot[0] = cell->pot[1] = cell->pot[2] = 1;
+    }
+    
+    //    Nos métodos A e B, células de fronteira (FRONTIER e FRONTIER_NEAR_WALL)
+    //    deverão receber um potencial atrator, igual a 0.0. Além disso, por padrão nestes dois
+    //    métodos, todas as células iniciam com potencial baixo, pot[0]=pot[1]=0 (isso já
+    //    está definido na classe Grid e não deve ser alterado).
+    //    if (cell->planType == FRONTIER || cell->planType == FRONTIER_NEAR_WALL) {
+    //        cell->pot[0] = cell->pot[1] = 0;
+    //    }
+    
+    if (cell->planType == FRONTIER_NEAR_WALL) {
+        cell->pot[2] = 0;
+    }
+    
+//    Em contrapartida, no método C somente as células de fronteira próximas a paredes
+//    (FRONTIER_NEAR_WALL) recebem potencial atrator fixo (0.0) . As demais células
+//    de fronteira (FRONTIER), são fixadas com potencial repulsivo (1.0). Note que diferentemente dos métodos A e B, todas as células iniciam com potencial alto (pot[2]=1).
+//    Isto é feito para garantir que somente os “cantos” das fronteiras sejam atratores.
+//    if (cell->planType == FRONTIER) {
+//        cell->pot[2] = 1;
+//    }
+}
+
+void Planning::initializeCellPreference(Cell *cell) {
+    float baseValue = 0.5;
+    switch (cell->planType) {
+        case NEAR_WALLS:
+            cell->pref = baseValue;
+            break;
+            
+        case REGULAR:
+            cell->pref = -baseValue;
+            break;
+            
+        case FRONTIER:
+            cell->pref = -baseValue;
+            break;
+            
+        case DANGER:
+            cell->pref = -baseValue;
+            break;
+            
+        case FRONTIER_NEAR_WALL:
+            cell->pref = -baseValue;
+            break;
+            
+        default:
+            break;
+    }
+    
+}
+
 void Planning::initializePotentials()
 {
-    Cell *c;
-
-    // the potential of a cell is stored in:
-    // c->pot[i]
-    // the preference of a cell is stored in:
-    // c->pref
-
-    // TODO: initialize the potential field in the known map
-    //
     //  (gridLimits.minX, gridLimits.maxY)  -------  (gridLimits.maxX, gridLimits.maxY)
     //                  |                     \                      |
     //                  |                      \                     |
     //                  |                       \                    |
     //  (gridLimits.minX, gridLimits.minY)  -------  (gridLimits.maxX, gridLimits.minY)
+    
+    Cell *cellInUpdateRange;
+    for (int xInUpdateRange = gridLimits.minX; xInUpdateRange <= gridLimits.maxX; xInUpdateRange++) {
+        for (int yInUpdateRange = gridLimits.minY; yInUpdateRange <= gridLimits.maxY; yInUpdateRange++) {
+            cellInUpdateRange = grid->getCell(xInUpdateRange, yInUpdateRange);
+            initializeCellPotential(cellInUpdateRange);
+            initializeCellPreference(cellInUpdateRange);
+        }
+    }
+}
+
+float Planning::potencialHarmonico(int cellX, int cellY, int potentialType) {
+    float potencialHarmonico;
+    
+    Cell *left = grid->getCell(cellX-1, cellY);
+    Cell *right = grid->getCell(cellX+1, cellY);
+    Cell *up = grid->getCell(cellX, cellY-1);
+    Cell *down = grid->getCell(cellX, cellY+1);
+    
+    potencialHarmonico = (left->pot[potentialType] + right->pot[potentialType] + up->pot[potentialType] + down->pot[potentialType])/4;
+    
+    return potencialHarmonico;
+}
+
+float Planning::potencialPreferencias(int cellX, int cellY) {
+    Cell *cell = grid->getCell(cellX, cellY);
+    Cell *left = grid->getCell(cellX-1, cellY);
+    Cell *right = grid->getCell(cellX+1, cellY);
+    Cell *up = grid->getCell(cellX, cellY-1);
+    Cell *down = grid->getCell(cellX, cellY+1);
+    
+    int potentialType = 2; // preferencias
+    float h = (left->pot[potentialType] + right->pot[potentialType] + up->pot[potentialType] + down->pot[potentialType])/4;
+    float d = abs((up->pot[potentialType] - down->pot[potentialType])/2) + abs((left->pot[potentialType] - right->pot[potentialType])/2);
+    
+    float potencialPreferencias = h - (cell->pref*d/4);
+    
+    return potencialPreferencias;
 }
 
 void Planning::iteratePotentials()
 {
-    Cell* c;
-    Cell *left,*right,*up,*down;
-
-    // the update of a FREE cell in position (i,j) will use the potential of the four adjacent cells
-    // where, for example:
-    //     left  = grid->getCell(i-1,j);
-
-
     // TODO: iterate the potential field in the known map
     //
     //  (gridLimits.minX, gridLimits.maxY)  -------  (gridLimits.maxX, gridLimits.maxY)
@@ -251,27 +327,52 @@ void Planning::iteratePotentials()
     //                  |                      \                     |
     //                  |                       \                    |
     //  (gridLimits.minX, gridLimits.minY)  -------  (gridLimits.maxX, gridLimits.minY)
+    Cell *cellInUpdateRange;
+    for (int xInUpdateRange = gridLimits.minX; xInUpdateRange <= gridLimits.maxX; xInUpdateRange++) {
+        for (int yInUpdateRange = gridLimits.minY; yInUpdateRange <= gridLimits.maxY; yInUpdateRange++) {
+            cellInUpdateRange = grid->getCell(xInUpdateRange, yInUpdateRange);
+            if (cellInUpdateRange->occType == FREE) {
+                cellInUpdateRange->pot[0] = potencialHarmonico(xInUpdateRange, yInUpdateRange, 0);
+                cellInUpdateRange->pot[1] = potencialPreferencias(xInUpdateRange, yInUpdateRange);
+                cellInUpdateRange->pot[2] = potencialHarmonico(xInUpdateRange, yInUpdateRange, 2);
+            }
+        }
+    }
+}
+
+float Planning::gradientX(int potentialType, int cellX, int cellY) {
+    Cell *left = grid->getCell(cellX-1, cellY);
+    Cell *right = grid->getCell(cellX+1, cellY);
+    float gradientX = (left->pot[potentialType] - right->pot[potentialType])/2;
+    return gradientX;
+}
+
+float Planning::gradientY(int potentialType, int cellX, int cellY) {
+    Cell *up = grid->getCell(cellX, cellY-1);
+    Cell *down = grid->getCell(cellX, cellY+1);
+    float gradientX = (up->pot[potentialType] - down->pot[potentialType])/2;
+    return gradientX;
 }
 
 void Planning::updateGradient()
 {
-    Cell* c;
-
-    // the components of the descent gradient of a cell are stored in:
-    // c->dirX[i] and c->dirY[i], for pot[i]
-
-    Cell *left,*right,*up,*down;
-
-    // the gradient of a FREE cell in position (i,j) is computed using the potential of the four adjacent cells
-    // where, for example:
-    //     left  = grid->getCell(i-1,j);
-
-
-    // TODO: compute the gradient of the FREE cells in the known map
-    //
     //  (gridLimits.minX, gridLimits.maxY)  -------  (gridLimits.maxX, gridLimits.maxY)
     //                  |                     \                      |
     //                  |                      \                     |
     //                  |                       \                    |
     //  (gridLimits.minX, gridLimits.minY)  -------  (gridLimits.maxX, gridLimits.minY)
+    Cell *cellInUpdateRange;
+    for (int xInUpdateRange = gridLimits.minX; xInUpdateRange <= gridLimits.maxX; xInUpdateRange++) {
+        for (int yInUpdateRange = gridLimits.minY; yInUpdateRange <= gridLimits.maxY; yInUpdateRange++) {
+            cellInUpdateRange = grid->getCell(xInUpdateRange, yInUpdateRange);
+            if (cellInUpdateRange->occType == FREE) {
+                cellInUpdateRange->dirX[0] = gradientX(0, xInUpdateRange, yInUpdateRange);
+                cellInUpdateRange->dirY[0] = gradientY(0, xInUpdateRange, yInUpdateRange);
+                cellInUpdateRange->dirX[1] = gradientX(1, xInUpdateRange, yInUpdateRange);
+                cellInUpdateRange->dirY[1] = gradientY(1, xInUpdateRange, yInUpdateRange);
+                cellInUpdateRange->dirX[2] = gradientX(2, xInUpdateRange, yInUpdateRange);
+                cellInUpdateRange->dirY[2] = gradientY(2, xInUpdateRange, yInUpdateRange);
+            }
+        }
+    }
 }
