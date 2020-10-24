@@ -14,12 +14,12 @@ Planning::Planning()
 {
     newRobotPosition.x = 0;
     newRobotPosition.y = 0;
-
+    
     robotPosition = newRobotPosition;
-
+    
     newGridLimits.minX = newGridLimits.minY = 1000;
     newGridLimits.maxX = newGridLimits.maxY = -1000;
-
+    
     gridLimits = newGridLimits;
 }
 
@@ -40,7 +40,7 @@ void Planning::setNewRobotPose(Pose p)
 {
     newRobotPosition.x = (int)(p.x*grid->getMapScale());
     newRobotPosition.y = (int)(p.y*grid->getMapScale());
-
+    
     newGridLimits.minX = std::min(newGridLimits.minX,newRobotPosition.x-maxUpdateRange);
     newGridLimits.maxX = std::max(newGridLimits.maxX,newRobotPosition.x+maxUpdateRange);
     newGridLimits.minY = std::min(newGridLimits.minY,newRobotPosition.y-maxUpdateRange);
@@ -50,23 +50,23 @@ void Planning::setNewRobotPose(Pose p)
 void Planning::run()
 {
     pthread_mutex_lock(grid->mutex);
-
+    
     resetCellsTypes();
-
+    
     // update robot position and grid limits using last position informed by the robot
     robotPosition = newRobotPosition;
     gridLimits = newGridLimits;
-
+    
     updateCellsTypes();
-
+    
     pthread_mutex_unlock(grid->mutex);
-
+    
     initializePotentials();
-
+    
     for(int i=0; i<100; i++){
         iteratePotentials();
     }
-
+    
     updateGradient();
 }
 
@@ -80,7 +80,7 @@ void Planning::resetCellsTypes()
 {
     for(int i=gridLimits.minX;i<=gridLimits.maxX;i++){
         for(int j=gridLimits.minY;j<=gridLimits.maxY;j++){
-
+            
             Cell* c = grid->getCell(i,j);
             c->planType = REGULAR;
         }
@@ -251,11 +251,6 @@ void Planning::iteratePotentials()
     //                  |                      \                     |
     //                  |                       \                    |
     //  (gridLimits.minX, gridLimits.minY)  -------  (gridLimits.maxX, gridLimits.minY)
-
-
-
-
-
 }
 
 void Planning::updateGradient()
@@ -279,14 +274,4 @@ void Planning::updateGradient()
     //                  |                      \                     |
     //                  |                       \                    |
     //  (gridLimits.minX, gridLimits.minY)  -------  (gridLimits.maxX, gridLimits.minY)
-
-
-
-
-
-
-
 }
-
-
-
