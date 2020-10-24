@@ -188,13 +188,19 @@ void GlutClass::writeViewModeName(int xc, int yc)
         str="grid: LOG_ODDS";
         break;
     case 1:
-        str="grid: OCC SONAR";
-        break;
-    case 2:
         str="grid: HIMM";
         break;
-    case 3:
+    case 2:
         str="grid: TYPES";
+        break;
+    case 3:
+        str="grid: POT A";
+        break;
+    case 4:
+        str="grid: POT B";
+        break;
+    case 5:
+        str="grid: POT C";
         break;
     }
 
@@ -322,7 +328,18 @@ void GlutClass::keyboard(unsigned char key, int x, int y)
             instance->robot_->motionMode_ = WALLFOLLOW;
             std::cout << "MotionMode: 4 - WALLFOLLOW" << std::endl;
             break;
-
+        case '5':
+            instance->robot_->motionMode_ = POTFIELD_0;
+            std::cout << "MotionMode: 5 - POTFIELD_0" << std::endl;
+            break;
+        case '6':
+            instance->robot_->motionMode_ = POTFIELD_1;
+            std::cout << "MotionMode: 6 - POTFIELD_1" << std::endl;
+            break;
+        case '7':
+            instance->robot_->motionMode_ = POTFIELD_2;
+            std::cout << "MotionMode: 7 - POTFIELD_2" << std::endl;
+            break;
         case 'l': //Lock camera
             if(instance->lockCameraOnRobot == true){
                 instance->lockCameraOnRobot = false;

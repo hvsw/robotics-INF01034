@@ -53,6 +53,7 @@ protected:
     // Navigation stuff
     void wanderAvoidingCollisions();
     void wallFollow();
+    void followPotentialField(int t);
     bool isFollowingLeftWall_;
 
     // Mapping stuff

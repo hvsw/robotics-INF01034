@@ -2,6 +2,7 @@
 
 #include <queue>
 #include <float.h> //DBL_MAX
+#include <GL/glut.h>
 
 ////////////////////////
 ///                  ///
@@ -14,8 +15,12 @@ Planning::Planning()
     newRobotPosition.x = 0;
     newRobotPosition.y = 0;
 
+    robotPosition = newRobotPosition;
+
     newGridLimits.minX = newGridLimits.minY = 1000;
     newGridLimits.maxX = newGridLimits.maxY = -1000;
+
+    gridLimits = newGridLimits;
 }
 
 Planning::~Planning()
@@ -46,7 +51,7 @@ void Planning::run()
 {
     pthread_mutex_lock(grid->mutex);
 
-    // resetCellsTypes();
+    resetCellsTypes();
 
     // update robot position and grid limits using last position informed by the robot
     robotPosition = newRobotPosition;
@@ -55,6 +60,14 @@ void Planning::run()
     updateCellsTypes();
 
     pthread_mutex_unlock(grid->mutex);
+
+    initializePotentials();
+
+    for(int i=0; i<100; i++){
+        iteratePotentials();
+    }
+
+    updateGradient();
 }
 
 /////////////////////////////////////////////
@@ -69,8 +82,6 @@ void Planning::resetCellsTypes()
         for(int j=gridLimits.minY;j<=gridLimits.maxY;j++){
 
             Cell* c = grid->getCell(i,j);
-
-            c->occType = UNEXPLORED;
             c->planType = REGULAR;
         }
     }
@@ -78,15 +89,7 @@ void Planning::resetCellsTypes()
 
 void Planning::updateCellsTypes()
 {
-
-    // If you want to access the current cells surrounding the robot, use this range
-    //
-    //  (robotPosition.x-maxUpdateRange, robotPosition.y+maxUpdateRange)  -------  (robotPosition.x+maxUpdateRange, robotPosition.y+maxUpdateRange)
-    //                                 |                                    \                                     |
-    //                                 |                                     \                                    |
-    //                                 |                                      \                                   |
-    //  (robotPosition.x-maxUpdateRange, robotPosition.y-maxUpdateRange)  -------  (robotPosition.y+maxUpdateRange, robotPosition.y-maxUpdateRange)
-
+    Cell* c;
 
     // If you want to access all observed cells (since the start), use this range
     //

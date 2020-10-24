@@ -4,9 +4,11 @@
 #include <pthread.h>
 
 enum CellOccType {OCCUPIED, UNEXPLORED, FREE};
-enum CellPlanType {REGULAR, DANGER, FRONTIER};
+enum CellPlanType {REGULAR, DANGER, NEAR_WALLS, FRONTIER, FRONTIER_NEAR_WALL};
 
 #define UNDEF -10000000
+
+#define NUM_POTENTIALS 3
 
 class Cell
 {
@@ -16,7 +18,9 @@ class Cell
         double logodds,occupancy;
         double logoddsSonar,occupancySonar;
 
-        double dirX, dirY;
+        double pot[NUM_POTENTIALS];
+        double dirX[NUM_POTENTIALS], dirY[NUM_POTENTIALS];
+        double pref;
 
         CellOccType occType;
         CellPlanType planType;
@@ -36,6 +40,8 @@ class Grid
 
         int numViewModes;
         int viewMode;
+        int firstPotViewMode;
+
         bool showValues;
         bool showArrows;
 

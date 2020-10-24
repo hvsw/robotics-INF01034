@@ -32,6 +32,7 @@ class Planning {
         void setGrid(Grid* g);
         void setMaxUpdateRange(int r);
 
+        void drawRoadmap();
 
         Grid* grid;
 
@@ -42,6 +43,11 @@ class Planning {
         void expandObstacles();
         void detectFrontiers();
 
+        void initializePotentials();
+        void iteratePotentials();
+        void iterateDistortedPotentials();
+
+        void updateGradient();
 
         point2d robotPosition;
         bbox gridLimits;
@@ -50,6 +56,7 @@ class Planning {
         bbox newGridLimits;
 
         int maxUpdateRange;
+
 };
 
 

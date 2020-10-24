@@ -14,7 +14,7 @@ PioneerBase::PioneerBase()
     sonars_.resize(numSonars_, 0.0);
     numLasers_ = 181;
     lasers_.resize(numLasers_, 0.0);
-    maxLaserRange_ = 6.5; // 5.0;
+    maxLaserRange_ = 4.0; // 6.5;
     maxSonarRange_ = 5.0; // 5.0;
 
 
