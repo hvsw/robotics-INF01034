@@ -99,6 +99,20 @@ void Planning::updateCellsTypes()
     //                  |                       \                    |
     //  (gridLimits.minX, gridLimits.minY)  -------  (gridLimits.maxX, gridLimits.minY)
 
+    // TODO: classify cells
+
+    // the occupancy type of a cell can be defined as:
+    // c->occType = UNEXPLORED
+    // c->occType = OCCUPIED
+    // c->occType = FREE
+
+    // the planning type of a cell can be defined as:
+    // c->planType = REGULAR
+    // c->planType = FRONTIER
+    // c->planType = DANGER
+    // c->planType = NEAR_WALLS
+    // c->planType = FRONTIER_NEAR_WALL
+
     float occupiedValue = 9;
     float freeValue = 5;
     float occToFree = 12;
@@ -183,5 +197,60 @@ void Planning::updateCellsTypes()
         }
     }
 }
+
+void Planning::iteratePotentials()
+{
+    Cell* c;
+    Cell *left,*right,*up,*down;
+
+    // the update of a FREE cell in position (i,j) will use the potential of the four adjacent cells
+    // where, for example:
+    //     left  = grid->getCell(i-1,j);
+
+
+    // TODO: iterate the potential field in the known map
+    //
+    //  (gridLimits.minX, gridLimits.maxY)  -------  (gridLimits.maxX, gridLimits.maxY)
+    //                  |                     \                      |
+    //                  |                      \                     |
+    //                  |                       \                    |
+    //  (gridLimits.minX, gridLimits.minY)  -------  (gridLimits.maxX, gridLimits.minY)
+
+
+
+
+
+}
+
+void Planning::updateGradient()
+{
+    Cell* c;
+
+    // the components of the descent gradient of a cell are stored in:
+    // c->dirX[i] and c->dirY[i], for pot[i]
+
+    Cell *left,*right,*up,*down;
+
+    // the gradient of a FREE cell in position (i,j) is computed using the potential of the four adjacent cells
+    // where, for example:
+    //     left  = grid->getCell(i-1,j);
+
+
+    // TODO: compute the gradient of the FREE cells in the known map
+    //
+    //  (gridLimits.minX, gridLimits.maxY)  -------  (gridLimits.maxX, gridLimits.maxY)
+    //                  |                     \                      |
+    //                  |                      \                     |
+    //                  |                       \                    |
+    //  (gridLimits.minX, gridLimits.minY)  -------  (gridLimits.maxX, gridLimits.minY)
+
+
+
+
+
+
+
+}
+
 
 
