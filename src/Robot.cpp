@@ -262,19 +262,70 @@ void Robot::followPotentialField(int t)
     int robotX=currentPose_.x*scale;
     int robotY=currentPose_.y*scale;
     float robotAngle = currentPose_.theta;
+    
+    Cell* c = grid->getCell(robotX, robotY);
+    
+    // dica 2
+    float gradientX, gradientY;
+    Cell *c2;
+    int size = 3;
+    int numberOfCellsEvaluated = 0;
+    for (int i = robotX-size; i <= robotX+size; i++) {
+        for (int j = robotY-size; j <= robotY+size; j++) {
+            c2 = grid->getCell(i, j);
+            gradientX += c2->dirX[t];
+            gradientY += c2->dirY[t];
+            numberOfCellsEvaluated++;
+        }
+    }
+    
+    float phi = RAD2DEG(atan2(gradientY/numberOfCellsEvaluated, gradientX/numberOfCellsEvaluated)) - robotAngle;
+    float phiNormalized = normalizeAngleDEG(phi);
+    
+    // PID control
+    // Constants
+    float tp = 0.01;
+    float td = 0.01;
+    float ti = 0.005;
 
-    // how to access the grid cell associated to the robot position
-    Cell* c=grid->getCell(robotX,robotY);
-
-    float linVel, angVel;
-
-    // TODO: define the robot velocities using a control strategy
-    //       based on the direction of the gradient of c given by c->dirX[t] and c->dirY[t]
-
-
-
-
-    base.setWheelsVelocity_fromLinAngVelocity(linVel,angVel);
+    // CTE: CrossTalk Error = SetPoint - ProcessVariable.
+    float CTE = 0;
+    float dCTE = 0;
+    float integral = 0;
+    
+    // Rotate integration control buffer
+    int phiDistance = 0;
+    int NUMBER_OF_MEASURES = 5;
+    float phiDistances[NUMBER_OF_MEASURES];
+    
+    for (int i = 0; i < NUMBER_OF_MEASURES-1; i++)
+        phiDistances[i+1] = phiDistances[i];
+    phiDistances[0] = phiNormalized - phiDistance;
+    
+    // Integrate
+    for(int i = 0; i < NUMBER_OF_MEASURES; i++)
+        integral += phiDistances[i];
+    
+    CTE = phiDistances[0];
+    dCTE = (CTE - phiDistances[1]);
+    if (phiNormalized < 0) {
+        dCTE = -dCTE;
+        tp = -tp;
+    }
+    
+    //angular velocity (w)
+    float angVel = tp*CTE - td*dCTE - ti*integral;
+    
+    // dica 1
+    float linVel = 1;
+//    float alpha = 90; // limite de phi para mexer na velocidade linear
+//    if (abs(phiNormalized) > alpha) {
+//        linVel *= 0.95;
+//    } else {
+//        linVel *= 1.05;
+//    }
+    
+    base.setWheelsVelocity_fromLinAngVelocity(linVel, angVel);
 }
 
 
