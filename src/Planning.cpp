@@ -217,6 +217,7 @@ void Planning::updateCellsTypes()
 }
 
 void Planning::initializeCellPotential(Cell *cell) {
+//    Independente do método, células OCCUPIED e DANGER deverão sempre receber um potencial repulsivo, igual a 1.0.
     if (cell->occType == OCCUPIED || cell->planType == DANGER) {
         cell->pot[0] = cell->pot[1] = cell->pot[2] = 1;
     }
@@ -229,6 +230,7 @@ void Planning::initializeCellPotential(Cell *cell) {
     //        cell->pot[0] = cell->pot[1] = 0;
     //    }
     
+//    Em contrapartida, no método C somente as células de fronteira próximas a paredes (FRONTIER_NEAR_WALL) recebem potencial atrator fixo (0.0)
     if (cell->planType == FRONTIER_NEAR_WALL) {
         cell->pot[2] = 0;
     }
@@ -240,6 +242,8 @@ void Planning::initializeCellPotential(Cell *cell) {
 //    if (cell->planType == FRONTIER) {
 //        cell->pot[2] = 1;
 //    }
+    
+//    Os potenciais das demais células (que não se enquadram nessas classificações) não devem ser inicializados, pois eles serão computados iterativamente a partir dos valores anteriores.
 }
 
 void Planning::initializeCellPreference(Cell *cell) {
@@ -315,10 +319,16 @@ void Planning::iteratePotentials()
     for (int xInUpdateRange = gridLimits.minX; xInUpdateRange <= gridLimits.maxX; xInUpdateRange++) {
         for (int yInUpdateRange = gridLimits.minY; yInUpdateRange <= gridLimits.maxY; yInUpdateRange++) {
             cellInUpdateRange = grid->getCell(xInUpdateRange, yInUpdateRange);
+            //  basta atualizar o potencial das células FREE.
             if (cellInUpdateRange->occType == FREE) {
+                //  Para isso varra todas as células dentro da área conhecida do mapa (limitada por gridLimits). Células que forem FREE devem ser atualizadas em função das células vizinhas usando diferenças finitas
+                
+                // Os métodos A e C usam a definição original do potencial harmônico descrita no Algoritmo 1 da Aula 15
                 cellInUpdateRange->pot[0] = potencialHarmonico(xInUpdateRange, yInUpdateRange, 0);
-                cellInUpdateRange->pot[1] = potencialPreferencias(xInUpdateRange, yInUpdateRange);
                 cellInUpdateRange->pot[2] = potencialHarmonico(xInUpdateRange, yInUpdateRange, 2);
+                
+                // Já o método B usa a equação atualizada definida no Algoritmo 2 da Aula 15, que permite o uso de preferências no cálculo do potencial.
+                cellInUpdateRange->pot[1] = potencialPreferencias(xInUpdateRange, yInUpdateRange);
             }
         }
     }
@@ -354,6 +364,8 @@ float Planning::gradientY(int potentialType, int cellX, int cellY) {
     
     float gradientY = dy;
     
+    // Lembre de normalizar o vetor gradiente pois para a navegação só nós interessa saber a direção do gradiente, não sua intensidade. Ou seja, divida as componentes horizontais e verticais pela norma do gradiente |∇p| (desde que |∇p| 6= 0)
+    
     if (norma != 0) {
         gradientY /= norma;
     }
@@ -372,7 +384,10 @@ void Planning::updateGradient()
     for (int xInUpdateRange = gridLimits.minX; xInUpdateRange <= gridLimits.maxX; xInUpdateRange++) {
         for (int yInUpdateRange = gridLimits.minY; yInUpdateRange <= gridLimits.maxY; yInUpdateRange++) {
             cellInUpdateRange = grid->getCell(xInUpdateRange, yInUpdateRange);
+            // Nesta etapa é preciso computar o vetor gradiente descendente (−∇p) de cada um dos três potenciais das células FREE, através de uma varredura igual a feita no exercício anterior.
             if (cellInUpdateRange->occType == FREE) {
+                // Cada célula (Cell* c) do grid tem os vetores gradiente descritos pelas componentes horizontais e verticais: c->dirX[i] e c->dirY[i], onde i=0,1,2 indica a qual potencial se refere
+                    
                 cellInUpdateRange->dirX[0] = gradientX(0, xInUpdateRange, yInUpdateRange);
                 cellInUpdateRange->dirY[0] = gradientY(0, xInUpdateRange, yInUpdateRange);
                 
