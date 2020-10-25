@@ -310,7 +310,7 @@ float Planning::potencialPreferencias(int cellX, int cellY) {
     Cell *down = grid->getCell(cellX, cellY+1);
     
     int potentialType = 2; // preferencias
-    float h = (left->pot[potentialType] + right->pot[potentialType] + up->pot[potentialType] + down->pot[potentialType])/4;
+    float h = potencialHarmonico(cellX, cellY, potentialType);
     float d = abs((up->pot[potentialType] - down->pot[potentialType])/2) + abs((left->pot[potentialType] - right->pot[potentialType])/2);
     
     float potencialPreferencias = h - (cell->pref*d/4);
