@@ -391,8 +391,10 @@ void Planning::updateGradient()
             if (cellInUpdateRange->occType == FREE) {
                 cellInUpdateRange->dirX[0] = gradientX(0, xInUpdateRange, yInUpdateRange);
                 cellInUpdateRange->dirY[0] = gradientY(0, xInUpdateRange, yInUpdateRange);
+                
                 cellInUpdateRange->dirX[1] = gradientX(1, xInUpdateRange, yInUpdateRange);
                 cellInUpdateRange->dirY[1] = gradientY(1, xInUpdateRange, yInUpdateRange);
+                
                 cellInUpdateRange->dirX[2] = gradientX(2, xInUpdateRange, yInUpdateRange);
                 cellInUpdateRange->dirY[2] = gradientY(2, xInUpdateRange, yInUpdateRange);
             }
