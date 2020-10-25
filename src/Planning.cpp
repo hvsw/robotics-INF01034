@@ -243,7 +243,7 @@ void Planning::initializeCellPotential(Cell *cell) {
 }
 
 void Planning::initializeCellPreference(Cell *cell) {
-    float baseValue = 0.5;
+    float baseValue = 0.8;
     switch (cell->planType) {
         case NEAR_WALLS:
             cell->pref = baseValue;
