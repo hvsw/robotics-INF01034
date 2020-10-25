@@ -341,17 +341,40 @@ void Planning::iteratePotentials()
 }
 
 float Planning::gradientX(int potentialType, int cellX, int cellY) {
+    Cell *up = grid->getCell(cellX, cellY-1);
+    Cell *down = grid->getCell(cellX, cellY+1);
     Cell *left = grid->getCell(cellX-1, cellY);
     Cell *right = grid->getCell(cellX+1, cellY);
-    float gradientX = (left->pot[potentialType] - right->pot[potentialType])/2;
+    float dx = (left->pot[potentialType] - right->pot[potentialType])/2;
+    float dy = (up->pot[potentialType] - down->pot[potentialType])/2;
+    float norma = sqrt(pow(dx, 2)+pow(dy, 2));
+    
+    float gradientX = dx;
+    
+    if (norma != 0) {
+        gradientX /= norma;
+    }
+    
     return gradientX;
 }
 
 float Planning::gradientY(int potentialType, int cellX, int cellY) {
     Cell *up = grid->getCell(cellX, cellY-1);
     Cell *down = grid->getCell(cellX, cellY+1);
-    float gradientX = (up->pot[potentialType] - down->pot[potentialType])/2;
-    return gradientX;
+    Cell *left = grid->getCell(cellX-1, cellY);
+    Cell *right = grid->getCell(cellX+1, cellY);
+    float dx = (left->pot[potentialType] - right->pot[potentialType])/2;
+    float dy = (up->pot[potentialType] - down->pot[potentialType])/2;
+    
+    float norma = sqrt(pow(dx, 2)+pow(dy, 2));
+    
+    float gradientY = dy;
+    
+    if (norma != 0) {
+        gradientY /= norma;
+    }
+    
+    return gradientY;
 }
 
 void Planning::updateGradient()
