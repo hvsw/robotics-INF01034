@@ -243,30 +243,14 @@ void Planning::initializeCellPotential(Cell *cell) {
 }
 
 void Planning::initializeCellPreference(Cell *cell) {
+//    Por fim, é nesta função que se deve inicializar as preferências das células (c->pref) que serão utilizadas no método B. Você deve escolher um valor de preferência fixo positivo para as células NEAR_WALLS e um valor fixo negativo para as demais células livres. Escolha valores simétricos entre 1 e -1 (isto é, ± 0.1; ± 0.2; ± 0.3, ...). Valores adequados devem ser encontrados empiricamente.
     float baseValue = 0.8;
-    switch (cell->planType) {
-        case NEAR_WALLS:
-            cell->pref = baseValue;
-            break;
-            
-        case REGULAR:
-            cell->pref = -baseValue;
-            break;
-            
-        case FRONTIER:
-            cell->pref = -baseValue;
-            break;
-            
-        case DANGER:
-            cell->pref = -baseValue;
-            break;
-            
-        case FRONTIER_NEAR_WALL:
-            cell->pref = -baseValue;
-            break;
-            
-        default:
-            break;
+    if (cell->planType == NEAR_WALLS) {
+        // Você deve escolher um valor de preferência fixo positivo para as células NEAR_WALLS
+        cell->pref = baseValue;
+    } else {
+        // um valor fixo negativo para as demais células livres
+        cell->pref = -baseValue;
     }
     
 }
