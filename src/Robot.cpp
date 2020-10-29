@@ -265,10 +265,10 @@ void Robot::followPotentialField(int t)
     
     Cell* c = grid->getCell(robotX, robotY);
     
-    // dica 2
-    float gradientX, gradientY;
+    // dica 2: media dos gradientes
+    float gradientX = 0, gradientY = 0;
     Cell *c2;
-    int size = 3;
+    int size = 1;
     int numberOfCellsEvaluated = 0;
     for (int i = robotX-size; i <= robotX+size; i++) {
         for (int j = robotY-size; j <= robotY+size; j++) {
@@ -279,51 +279,95 @@ void Robot::followPotentialField(int t)
         }
     }
     
-    float phi = RAD2DEG(atan2(gradientY/numberOfCellsEvaluated, gradientX/numberOfCellsEvaluated)) - robotAngle;
+    // Calcula angulo
+    float gradientAngle = RAD2DEG(atan2(gradientY/numberOfCellsEvaluated, gradientX/numberOfCellsEvaluated));
+    float phi = gradientAngle - robotAngle;
     float phiNormalized = normalizeAngleDEG(phi);
+    
+//    std::cout << "gradientAngle: " << gradientAngle << std::endl;
+//    std::cout << "robotAngle...: " << robotAngle << std::endl;
+//    std::cout << "phi..........: " << phi << std::endl;
+//    std::cout << "phiNormalized: " << phiNormalized << std::endl;
+//    std::cout << "--------------------" << std::endl;
     
     // PID control
     // Constants
-    float tp = 0.01;
-    float td = 0.01;
-    float ti = 0.005;
-
+    float tp = 0.001;
+    
+    // Keep in mind that τd tends to be the largest of the three gains, since the CTE difference in an instant ∆t is usually very small
+    float td = 0.5;
+    
+    // Likewise, τi tends to be the smallest of the three gains, since the sums of CTE values over time are usually very large
+    // Menor float possivel, pra descontar erro do tipo
+    float ti = 0.01;
+    
     // CTE: CrossTalk Error = SetPoint - ProcessVariable.
-    float CTE = 0;
-    float dCTE = 0;
-    float integral = 0;
+    float setPoint = 0;
+    float CTE = 0.0;
+    float dCTE = 0.0;
+    float integral = 0.0;
+    
+    int NUMBER_OF_MEASURES = 10;
+    static float phiMeasures[10];
     
     // Rotate integration control buffer
-    int phiDistance = 0;
-    int NUMBER_OF_MEASURES = 5;
-    float phiDistances[NUMBER_OF_MEASURES];
-    
     for (int i = 0; i < NUMBER_OF_MEASURES-1; i++)
-        phiDistances[i+1] = phiDistances[i];
-    phiDistances[0] = phiNormalized - phiDistance;
+        phiMeasures[i+1] = phiMeasures[i];
+    
+    phiMeasures[0] = CTE = (phiNormalized - setPoint);
     
     // Integrate
     for(int i = 0; i < NUMBER_OF_MEASURES; i++)
-        integral += phiDistances[i];
+        integral += phiMeasures[i];
     
-    CTE = phiDistances[0];
-    dCTE = (CTE - phiDistances[1]);
-    if (phiNormalized < 0) {
-        dCTE = -dCTE;
-        tp = -tp;
-    }
-    
-    //angular velocity (w)
-    float angVel = tp*CTE - td*dCTE - ti*integral;
-    
-    // dica 1
-    float linVel = 1;
-//    float alpha = 90; // limite de phi para mexer na velocidade linear
-//    if (abs(phiNormalized) > alpha) {
-//        linVel *= 0.95;
-//    } else {
-//        linVel *= 1.05;
+    // Derivative
+    dCTE = (CTE - phiMeasures[1]);
+//    if (abs(dCTE) > 90) {
+//        tp = -tp;
 //    }
+    float angVel = -tp*CTE - ti*integral - td*dCTE;
+        
+//    Dica 1: Quando o ângulo φ for muito grande, i.e. quando o gradiente apontar em
+//    uma direção oposta à orientação do robô (o que geralmente acontece quando o robô está
+//    indo em direção a um obstáculo), o controlador com velocidade linear fixa pode não ser
+//    suficientemente rápido para evitar colisões. Nesse caso, é bom verificar manualmente se
+//    |φ| é muito grande (maior que um dado limiar α), e rotacionar o robô sobre o próprio
+//    eixo
+    float linVel = 0.7;
+//    bool isRobotAlignedEnoughToGoFast = CTE < 20;
+//    if (isRobotAlignedEnoughToGoFast) {
+//        linVel = 0.7;
+//    } else{
+//        linVel = 0.1;
+//    }
+    
+//    linVel = MIN(linVel, 1);
+    
+//    std::cout << "Robot....: " << robotAngle << std::endl;
+//    std::cout << "Gradiente: " << gradientAngle << std::endl;
+//    std::cout << "CTE......: " << CTE << std::endl;
+//    std::cout << "tp.......: " << tp << std::endl;
+//    std::cout << "ti.......: " << ti << std::endl;
+//    std::cout << "td.......: " << td << std::endl;
+//    std::cout << "angVel...: " << angVel << std::endl;
+    
+    linVel = 0.5;
+    angVel = 0;
+    float dirX = c->dirX[t];
+    float dirY = c->dirY[t];
+    if ((dirX == 0) && (dirY == 0)) {
+        linVel = angVel = 0;
+    } else {
+        if (phiNormalized < -60) {
+            linVel = 0;
+            angVel = -0.5;
+        } else if (phiNormalized > 60) {
+            linVel = 0;
+            angVel = 0.5;
+        } else {
+            angVel = (phiNormalized/60) * linVel * 3.0;
+        }
+    }
     
     base.setWheelsVelocity_fromLinAngVelocity(linVel, angVel);
 }

@@ -124,6 +124,10 @@ void Planning::classificarPlanType(Cell *c, int cellX, int cellY) {
         }
     }
     
+    ///  -1,-1   -1,0  -1,1
+    ///   0,-1    0,0   0,1
+    ///   1,-1    1,0   1,1
+    
     size = 1;
     if (c->occType == FREE) {
         for (int xInRange = cellX-size; xInRange <= cellX+size; xInRange++) {
@@ -159,9 +163,9 @@ void Planning::classificarPlanType(Cell *c, int cellX, int cellY) {
 
 void Planning::classificarOccType(Cell *c) {
     float unexploredToOccThreshold = 9;
-    float unexploredToFreeThreshold = 5;
-    float freeToOccThreshold = 9;
-    float occToFreeThreshold = 12;
+    float unexploredToFreeThreshold = 2;
+    float freeToOccThreshold = 5;
+    float occToFreeThreshold = 2;
     
     float himmReading = c->himm;
     
