@@ -208,7 +208,7 @@ void MCL::initParticles(int set)
 
 void MCL::readMap(std::string mapName)
 {
-    std::string name("../phir2framework/DiscreteMaps/");
+    std::string name("../robotics-INF01034/DiscreteMaps/");
     name += mapName;
     std::ifstream file;
     file.open(name.c_str(), std::ifstream::in);
