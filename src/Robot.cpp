@@ -14,8 +14,10 @@ Robot::Robot()
 {
     ready_ = false;
     running_ = true;
+    firstIteration = true;
 
     grid = new Grid();
+    mcl = NULL;
 
     plan = new Planning();
     plan->setGrid(grid);
@@ -42,11 +44,11 @@ Robot::~Robot()
 ///// INITIALIZE & RUN METHODS /////
 ////////////////////////////////////
 
-void Robot::initialize(ConnectionMode cmode, LogMode lmode, std::string fname)
+void Robot::initialize(ConnectionMode cmode, LogMode lmode, std::string fname, std::string mapName)
 {
     logMode_ = lmode;
-//    logFile_ = new LogFile(logMode_,fname);
-    ready_ = true;
+
+    mcl = new MCL(base.getMaxLaserRange(),mapName,grid->mutex);
 
     // initialize ARIA
     if(logMode_!=PLAYBACK){
@@ -82,7 +84,26 @@ void Robot::run()
             base.writeOnLog();
     }
 
-    currentPose_ = base.getOdometry();
+    Pose odometry = base.getOdometry();
+    if(firstIteration){
+        prevLocalizationPose_ = odometry;
+        firstIteration = false;
+    }
+
+    Action u;
+    u.rot1 = atan2(odometry.y-prevLocalizationPose_.y,odometry.x-prevLocalizationPose_.x)-DEG2RAD(odometry.theta);
+    u.trans = sqrt(pow(odometry.x-prevLocalizationPose_.x,2)+pow(odometry.y-prevLocalizationPose_.y,2));
+    u.rot2 = DEG2RAD(odometry.theta)-DEG2RAD(prevLocalizationPose_.theta)-u.rot1;
+
+    // check if there is enough robot motion
+    if(u.trans > 0.1 || fabs(u.rot1) > DEG2RAD(30) || fabs(u.rot2) > DEG2RAD(30))
+    {
+        std::cout << currentPose_ << std::endl;
+        mcl->run(u,base.getLaserReadings());
+        prevLocalizationPose_ = odometry;
+    }
+
+    currentPose_ = odometry;
 
     pthread_mutex_lock(grid->mutex);
 
@@ -97,7 +118,7 @@ void Robot::run()
 
     // Save path traversed by the robot
     if(base.isMoving() || logMode_==PLAYBACK){
-        path_.push_back(base.getOdometry());
+        path_.push_back(currentPose_);
     }
 
     // Navigation
@@ -590,6 +611,13 @@ bool Robot::readFromLog() {
     return false;
 }
 
+Pose Robot::readInitialPose()
+{
+    Pose p = logFile_->readPose("Start");
+    p.theta = DEG2RAD(p.theta);
+    return p;
+}
+
 ////////////////////////
 ///// DRAW METHODS /////
 ////////////////////////
@@ -636,6 +664,11 @@ bool Robot::isRunning()
 const Pose& Robot::getCurrentPose()
 {
     return currentPose_;
+}
+
+void Robot::drawMCL()
+{
+    mcl->draw(grid->viewMode-6);
 }
 
 void Robot::drawPath()

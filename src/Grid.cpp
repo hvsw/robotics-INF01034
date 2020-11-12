@@ -45,8 +45,8 @@ Grid::Grid ()
         }
     }
 
-    numViewModes=6;
-    viewMode=2;
+    numViewModes=8;
+    viewMode=6;
     firstPotViewMode=3;
 
     showValues=false;

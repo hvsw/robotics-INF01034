@@ -8,6 +8,7 @@ SOURCES += \
     src/PioneerBase.cpp \
     src/Grid.cpp \
     src/main.cpp \
+    src/MCL.cpp \
     src/Robot.cpp \
     src/Utils.cpp \
     src/Planning.cpp
@@ -18,6 +19,7 @@ OTHER_FILES += \
 HEADERS += \
     src/Grid.h \
     src/GlutClass.h \
+    src/MCL.h \
     src/PioneerBase.h \
     src/Robot.h \
     src/Utils.h \
