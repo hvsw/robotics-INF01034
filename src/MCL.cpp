@@ -85,19 +85,46 @@ void MCL::weighting(int set, const std::vector<float> &z)
 {
     if (set == 0) {
         /// Estratégia complexa
-
+        
         /// elimine particulas fora do espaco livre
         /// compare as observacoes da particula com as observacoes z do robo
         // Use a funcao computeExpectedMeasurement(k, particles[i].p)
         // para achar a k-th observacao esperada da particula i
+        double weight = 0, weightSum = 0;
+        float variance = 50;
+        
+        for (int i = 0; i < numParticles; i++) {
+            if (mapCells[(int)(particles[set][i].p.x*scale)][(int)(particles[set][i].p.y*scale)] != FREE) { // Fora do espaço livre
+                particles[set][i].w = 0;
+            } else {
+                weight = 1.0;
+                for (int k = 0; k <= 180; k += 20) {
+                    float a = (1.0/(sqrt(2.0 * 3.1415 * variance)));
+                    float diff = (z[k] - computeExpectedMeasurement(k, particles[set][i].p));
+                    float exp = (-(1.0/2.0) * pow(diff, 2) / variance);
+                    float b = pow(2.71828, exp);
+                    weight *= a * b;
+                }
+                particles[set][i].w = weight;
+                weightSum += weight;
+            }
+        }
+        
         /// normalize os pesos
-
-
-
-
-
-
-    }else{
+        if (weightSum == 0) {
+            //            std::cout << "pesos muito baixos" << std::endl;
+            float a = 1.0/numParticles;
+            for (int i = 0; i < numParticles; i++) {
+                particles[set][i].w = a;
+            }
+        } else {
+            for (int i = 0; i < numParticles; i++) {
+                particles[set][i].w /= weightSum;
+                //            std::cout << "peso " << i << " : " << particles[i].w << std::endl;
+            }
+        }
+        
+    } else {
         /// Estratégia simplificada
 
         /// elimine particulas fora do espaco livre
