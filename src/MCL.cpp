@@ -8,7 +8,7 @@
 #include <GL/glut.h>
 
 MCL::MCL(float maxRange, std::string mapName, pthread_mutex_t* m):
-    maxRange(maxRange), mutex(m)
+maxRange(maxRange), mutex(m)
 {
     // construct a trivial random generator engine from a time-based seed:
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -17,9 +17,9 @@ MCL::MCL(float maxRange, std::string mapName, pthread_mutex_t* m):
     readMap(mapName);
     scale = 10;
     transparency = false;
-
     numParticles = 10000;
-
+    
+    
     for(int set=0; set<NUM_MCL; set++){
         initParticles(set);
         updateMeanAndCovariance(set);
@@ -298,15 +298,15 @@ void MCL::readMap(std::string mapName)
         std::cerr << "The file \"" << name << "\"  does not exist!" << std::endl;
         return;
     }
-
+    
     // Read dimensions.
     file >> mapWidth >> mapHeight;
     std::cout << "map.width " << mapWidth << " map.height " << mapHeight << std::endl;
-
+    
     mapCells = new CellOccType*[mapWidth];
-        for(int i=0;i<mapWidth;i++)
-            mapCells[i] = new CellOccType[mapHeight];
-
+    for(int i=0;i<mapWidth;i++)
+        mapCells[i] = new CellOccType[mapHeight];
+    
     // Read grid from file.
     char read;
     for(int y=0; y < mapHeight; y++)
@@ -328,7 +328,7 @@ void MCL::readMap(std::string mapName)
             }
         }
     }
-
+    
     file.close();
 }
 
@@ -350,40 +350,40 @@ void MCL::updateMeanAndCovariance(int set)
     meanParticle[set][0] /= numParticles;
     meanParticle[set][1] /= numParticles;
     meanParticle[set][2] = atan2(sx,cx);
-
+    
     // Compute Covariance Matrix (considering only x and y)
     float covariance[2][2];
     for(unsigned int l=0; l<2; l++)
         for(unsigned int c=0; c<2; c++)
             covariance[l][c] = 0;
-
+    
     float diffx, diffy;
     for(unsigned int i=0; i<numParticles; i++){
         diffx  = meanParticle[set][0]-particles[set][i].p.x;
         diffy  = meanParticle[set][1]-particles[set][i].p.y;
-
+        
         covariance[0][0] += diffx*diffx;    covariance[0][1] += diffx*diffy;
         covariance[1][0] += diffy*diffx;    covariance[1][1] += diffy*diffy;
     }
-
+    
     for(unsigned int l=0; l<2; l++)
         for(unsigned int c=0; c<2; c++)
             covariance[l][c] /= numParticles;
-
+    
     // Compute EigenValues and EigenVectors of covariance matrix
     float T = covariance[0][0] + covariance[1][1]; // Trace
     float D = covariance[0][0]*covariance[1][1] - covariance[0][1]*covariance[1][0]; // Determinant
-
+    
     if((pow(T,2.0)/4.0 - D)<0.0)
         return;
-
+    
     std::cout << "Covariance [" << covariance[0][0] << " " << covariance[0][1]
-                        << "; " << covariance[1][0] << " " << covariance[1][1] << std::endl;
-
+    << "; " << covariance[1][0] << " " << covariance[1][1] << std::endl;
+    
     float lambda1 = T/2.0 + sqrt(pow(T,2.0)/4.0 - D);
     float lambda2 = T/2.0 - sqrt(pow(T,2.0)/4.0 - D);
     float eigvec1[2], eigvec2[2];
-
+    
     if(covariance[1][0]!=0.0){
         eigvec1[0] = lambda1 - covariance[1][1];    eigvec2[0] = lambda2 - covariance[1][1];
         eigvec1[1] = covariance[1][0];              eigvec2[1] = covariance[1][0];
@@ -394,15 +394,15 @@ void MCL::updateMeanAndCovariance(int set)
         eigvec1[0] = 1;    eigvec2[0] = 0;
         eigvec1[1] = 0;    eigvec2[1] = 1;
     }
-
+    
     std::cout << "lambda " << lambda1 << " and " << lambda2 << std::endl;
     std::cout << "eigvectors [" << eigvec1[0] << "; " << eigvec1[1]
-              << "] and [" << eigvec1[0] << "; " << eigvec1[1] << "]" << std::endl;
-
+    << "] and [" << eigvec1[0] << "; " << eigvec1[1] << "]" << std::endl;
+    
     // Compute direction of covariance ellipse
     //1st - Calculate the angle between the largest eigenvector and the x-axis
     covAngle[set] = RAD2DEG(atan2(eigvec1[1], eigvec1[0]));
-
+    
     //2nd - Calculate the size of the minor and major axes
     covMajorAxis[set] = sqrt(lambda1);
     covMinorAxis[set] = sqrt(lambda2);
@@ -418,14 +418,14 @@ void MCL::draw(int set)
     // Draw map
     for(int x=0;x<mapWidth;x++){
         for(int y=0;y<mapHeight;y++){
-
+            
             if(mapCells[x][y] == OCCUPIED)
                 glColor3f(0.0,0.0,0.0);
             else if (mapCells[x][y] == UNEXPLORED)
                 glColor3f(0.5,0.5,0.5);
             else
                 glColor3f(1.0,1.0,1.0);
-
+            
             glBegin( GL_QUADS );
             {
                 glVertex2f(x  ,y  );
@@ -436,24 +436,24 @@ void MCL::draw(int set)
             glEnd();
         }
     }
-
+    
     double dirScale=5;
     glPointSize(4);
     glLineWidth(2);
-
+    
     float alpha;
     if(transparency)
         alpha = 100.0/numParticles;
     else
         alpha = 1.0;
-
+    
     // Draw particles
     for(int p=0;p<particles[set].size();p++){
-
+        
         double x=particles[set][p].p.x*scale;
         double y=particles[set][p].p.y*scale;
         double th=particles[set][p].p.theta;
-
+        
         // Draw point
         glColor4f(1.0,0.0,0.0,alpha);
         glBegin( GL_POINTS );
@@ -461,7 +461,7 @@ void MCL::draw(int set)
             glVertex2f(x, y);
         }
         glEnd();
-
+        
         // Draw direction
         glColor4f(0.0, 0.0, 1.0, alpha);
         glBegin( GL_LINES );
@@ -472,12 +472,12 @@ void MCL::draw(int set)
         glEnd();
     }
     glLineWidth(1);
-
+    
     // Draw mean
     double xRobot = meanParticle[set][0]*scale;
     double yRobot = meanParticle[set][1]*scale;
     double angRobot = RAD2DEG(meanParticle[set][2]);
-
+    
     glTranslatef(xRobot,yRobot,0.0);
     glRotatef(angRobot,0.0,0.0,1.0);
     glScalef(1.0/5.0,1.0/5.0,1.0/5.0);
@@ -504,7 +504,7 @@ void MCL::draw(int set)
     glScalef(5,5,5);
     glRotatef(-angRobot,0.0,0.0,1.0);
     glTranslatef(-xRobot,-yRobot,0.0);
-
+    
     // Draw Covariance Ellipse
     glColor3f(0.0,0.4,0.0);
     glLineWidth(2);
@@ -521,16 +521,16 @@ void MCL::Ellipse(float rx, float ry, float angle, int num_segments)
     float c = cos(theta);//precalculate the sine and cosine
     float s = sin(theta);
     float t;
-
+    
     float x = 1;//we start at angle = 0
     float y = 0;
-
+    
     glRotatef(angle,0,0,1);
     glBegin(GL_LINE_LOOP);
     for(int ii = 0; ii < num_segments; ii++)
     {
         glVertex2f(x*rx, y*ry);//output vertex
-
+        
         //apply the rotation matrix
         t = x;
         x = c * x - s * y;
