@@ -62,10 +62,23 @@ void MCL::sampling(int set, const Action &u)
     // particles[set][i].p.x
     // particles[set][i].p.y
     // particles[set][i].p.theta
-
-
-
-
+    float incerteza = 0.01;
+    for(int i = 0; i < numParticles; i++){
+        std::normal_distribution<double> samplerRot1(u.rot1, incerteza);
+        std::normal_distribution<double> samplerTrans(u.trans, incerteza);
+        std::normal_distribution<double> samplerRot2(u.rot2, incerteza);
+        
+        double sampleRot1 = samplerRot1(*generator);
+        double sampleTrans = samplerTrans(*generator);
+        double sampleRot2 = samplerRot2(*generator);
+        
+        particles[set][i].p.theta += sampleRot1;
+        particles[set][i].p.x += sampleTrans * cos(particles[set][i].p.theta);
+        particles[set][i].p.y += sampleTrans * sin(particles[set][i].p.theta);
+        particles[set][i].p.theta += sampleRot2;
+        
+        //std::cout << "PARTICULA " << i << " - ROT1: " << sampleRot1 << " / TRANS: " << sampleTrans << " / ROT2: " << sampleRot2 <<  std::endl;
+    }
 }
 
 void MCL::weighting(int set, const std::vector<float> &z)
