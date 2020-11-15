@@ -13,7 +13,7 @@ MCL::MCL(float maxRange, std::string mapName, pthread_mutex_t* m):
     // construct a trivial random generator engine from a time-based seed:
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     generator = new std::default_random_engine(seed);
-
+    
     readMap(mapName);
     scale = 10;
     transparency = false;
@@ -32,7 +32,7 @@ void MCL::run(const Action &u, const std::vector<float> &z)
         sampling(set,u);
         weighting(set,z);
         resampling(set);
-
+        
         updateMeanAndCovariance(set);
     }
 }
@@ -45,19 +45,19 @@ void MCL::run(const Action &u, const std::vector<float> &z)
 void MCL::sampling(int set, const Action &u)
 {
     /// TODO: propagar todas as particulas de acordo com o modelo de movimento baseado em odometria
-
+    
     /// Odometria definida pela estrutura Action, composta por 3 variaveis double:
     /// rot1, trans e rot2
     std::cout << "rot1 " << RAD2DEG(u.rot1) << " trans " << u.trans << " rot2 " << RAD2DEG(u.rot2) << std::endl;
-
+    
     /// Seguindo o modelo de Thrun, devemos gerar 3 distribuicoes normais, uma para cada componente da odometria
-
+    
     /// Para definir uma distribuição normal X de media M e variancia V, pode-se usar:
     // std::normal_distribution<double> samplerX(M,V);
     /// Para gerar amostras segundo a distribuicao acima, usa-se:
     // double amostra = samplerX(*generator)
     /// onde *generator é um gerador de numeros aleatorios (definido no construtor da classe)
-
+    
     /// Para acessar a i-ésima particula, usar:
     // particles[set][i].p.x
     // particles[set][i].p.y
@@ -70,9 +70,7 @@ void MCL::sampling(int set, const Action &u)
 
 void MCL::weighting(int set, const std::vector<float> &z)
 {
-    /// TODO: faça a pesagem de todas as particulas
-
-    if(set==0){
+    if (set == 0) {
         /// Estratégia complexa
 
         /// elimine particulas fora do espaco livre
@@ -102,9 +100,10 @@ void MCL::resampling(int set)
 {
     // gere uma nova geração de particulas com o mesmo tamanho do conjunto atual
     std::vector<MCLparticle> nextGeneration;
-
+    nextGeneration.resize(numParticles);
+    
     /// TODO: Implemente o Low Variance Resampling
-
+    
     /// Para gerar amostras de uma distribuição uniforme entre valores MIN e MAX, pode-se usar:
     // std::uniform_real_distribution<double> samplerU(MIN,MAX));
     /// Para gerar amostras segundo a distribuicao acima, usa-se:
@@ -127,13 +126,13 @@ void MCL::resampling(int set)
 float MCL::computeExpectedMeasurement(int index, Pose &pose)
 {
     double angle = pose.theta + double(90-index)*M_PI/180.0;
-
+    
     // Ray-casting using DDA
     double dist;
     double difX=cos(angle);
     double difY=sin(angle);
     double deltaX, deltaY;
-
+    
     if(tan(angle)==1 || tan(angle)==-1){
         deltaX=deltaY=1.0;
         dist = difX*maxRange;
@@ -152,22 +151,22 @@ float MCL::computeExpectedMeasurement(int index, Pose &pose)
         deltaY = -deltaY;
     if(dist < 0.0)
         dist = -dist;
-
+    
     dist *= scale;
-
+    
     double i=pose.x*scale;
     double j=pose.y*scale;
     for(int k=0;k<(int)(dist);k++){
-
+        
         if(mapCells[(int)i][(int)j] == OCCUPIED){
             // the real obstacle is one step ahead due to wall thickening
             return sqrt(pow(pose.x*scale-(i+deltaX),2)+pow(pose.y*scale-(j+deltaY),2))/scale;
         }
-
+        
         i+=deltaX;
         j+=deltaY;
     }
-
+    
     return maxRange;
 }
 
@@ -178,14 +177,14 @@ float MCL::computeExpectedMeasurement(int index, Pose &pose)
 void MCL::initParticles(int set)
 {
     particles[set].resize(numParticles);
-
+    
     std::uniform_real_distribution<double> randomX(0.0,mapWidth/scale);
     std::uniform_real_distribution<double> randomY(0.0,mapHeight/scale);
     std::uniform_real_distribution<double> randomTh(-M_PI,M_PI);
-
+    
     // generate initial set
     for(int i=0; i<numParticles; i++){
-
+        
         bool valid = false;
         do{
             // sample particle pose
@@ -196,13 +195,13 @@ void MCL::initParticles(int set)
             // check if particle is valid (known and not obstacle)
             if(mapCells[(int)(particles[set][i].p.x*scale)][(int)(particles[set][i].p.y*scale)] == FREE)
                 valid = true;
-
+            
         }while(!valid);
-
+        
         std::cout << "Particle (" << i << "): "
-                  << particles[set][i].p.x << ' '
-                  << particles[set][i].p.y << ' '
-                  << RAD2DEG(particles[set][i].p.theta) << std::endl;
+        << particles[set][i].p.x << ' '
+        << particles[set][i].p.y << ' '
+        << RAD2DEG(particles[set][i].p.theta) << std::endl;
     }
 }
 
@@ -212,7 +211,7 @@ void MCL::readMap(std::string mapName)
     name += mapName;
     std::ifstream file;
     file.open(name.c_str(), std::ifstream::in);
-
+    
     if( !file.good() )
     {
         std::cerr << "The file \"" << name << "\"  does not exist!" << std::endl;
