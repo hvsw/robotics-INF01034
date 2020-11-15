@@ -126,13 +126,42 @@ void MCL::weighting(int set, const std::vector<float> &z)
         
     } else {
         /// Estratégia simplificada
-
+        
         /// elimine particulas fora do espaco livre
         /// normalize os pesos
-
-
-
-
+        
+        for (int i = 0; i < numParticles; i++) {
+            if(mapCells[(int)(particles[set][i].p.x*scale)][(int)(particles[set][i].p.y*scale)] != FREE) {
+                // A estratégia simplificada de pesagem apenas deverá colocar peso
+                // zero para todas as partículas que, após a movimentação,
+                // ficarem sobre alguma célula não-livre.
+                // Todas as partículas que ficarem com peso zero serão posteriormente
+                // eliminadas na etapa de resampling.
+                particles[set][i].w = 0;
+            } else {
+                // As demais partículas receberão peso um.
+                particles[set][i].w = 1;
+            }
+        }
+        
+        double weightSum = 0;
+        for (int i = 0; i < numParticles; i++) {
+            weightSum += particles[set][i].w;
+        }
+        
+        for (int i = 0; i < numParticles; i++) {
+            if (weightSum == 0) {
+                // Note que se a soma der zero, a divisão não pode ser feita,
+                // nesse caso deixe todas as partículas com o mesmo peso (1/N).
+                // Porém isso é um sinal de que a variância no cálculo do peso está
+                // muito pequena.
+                particles[set][i].w /= numParticles;
+            } else {
+                // Na sequência é preciso normalizar os pesos das partículas, ou seja,
+                // calcular a soma de todos os pesos e dividí-los por essa soma.
+                particles[set][i].w /= weightSum;
+            }
+        }
     }
 }
 
