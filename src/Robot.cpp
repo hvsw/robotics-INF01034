@@ -109,8 +109,8 @@ void Robot::run()
 
     // Mapping
     mappingWithHIMMUsingLaser();
-    mappingWithLogOddsUsingLaser();
-    mappingUsingSonar();
+//    mappingWithLogOddsUsingLaser();
+//    mappingUsingSonar();
 
     pthread_mutex_unlock(grid->mutex);
 

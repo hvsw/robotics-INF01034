@@ -17,8 +17,8 @@ maxRange(maxRange), mutex(m)
     readMap(mapName);
     scale = 10;
     transparency = false;
-    numParticles = 10000;
     
+    numParticles = 1000;
     
     for(int set=0; set<NUM_MCL; set++){
         initParticles(set);
