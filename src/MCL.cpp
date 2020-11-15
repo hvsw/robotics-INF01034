@@ -178,14 +178,26 @@ void MCL::resampling(int set)
     /// Para gerar amostras segundo a distribuicao acima, usa-se:
     // double amostra = samplerU(*generator)
     /// onde *generator é um gerador de numeros aleatorios (definido no construtor da classe)
-
-
-
-
-
-
+    std::uniform_real_distribution<double> randomGen(0,(1.0/numParticles));
+    double r, c;
+    float u;
+    int newParticleIndex = 0, i = 0;
+    r = randomGen(*generator) * (1.0/numParticles);
+    c = particles[set][0].w;
+    
+    for (int j = 0; j < numParticles; j++) {
+        u = r + ((1.0/numParticles)*(j-1));
+        while (u > c) {
+            i++;
+            c += particles[set][i].w;
+        }
+        
+        nextGeneration[newParticleIndex] = particles[set][i];
+        newParticleIndex++;
+    }
+    
     /// Atualiza conjunto de particulas
-    // particles[set] = nextGeneration;
+    particles[set] = nextGeneration;
 }
 
 /////////////////////////////////////////////////////
