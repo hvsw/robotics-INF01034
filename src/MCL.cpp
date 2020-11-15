@@ -94,7 +94,10 @@ void MCL::weighting(int set, const std::vector<float> &z)
         float variance = 50;
         
         for (int i = 0; i < numParticles; i++) {
-            if (mapCells[(int)(particles[set][i].p.x*scale)][(int)(particles[set][i].p.y*scale)] != FREE) { // Fora do espaço livre
+            // TODO: Precisamos disso pra garantir que nao vai accesar um indice negativo e crashar?
+            int px = std::max((int)(particles[set][i].p.x * scale), 0);
+            int py = std::max((int)(particles[set][i].p.y * scale), 0);
+            if (mapCells[px][py] != FREE) {
                 particles[set][i].w = 0;
             } else {
                 weight = 1.0;
