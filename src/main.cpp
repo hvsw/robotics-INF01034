@@ -9,14 +9,14 @@
 ConnectionMode connectionMode;
 LogMode logMode;
 
-std::string filename;
+std::string filename, mapName;
 pthread_mutex_t* mutex;
 
 void* startRobotThread (void* ref)
 {
     Robot* robot=(Robot*) ref;
 
-    robot->initialize(connectionMode, logMode, filename);
+    robot->initialize(connectionMode, logMode, filename, mapName);
 
     while(robot->isRunning()){
         robot->run();
@@ -58,32 +58,55 @@ int main(int argc, char* argv[])
     connectionMode = SIMULATION;
     logMode = NONE;
     filename = "";
+    mapName = "";
 
-    if(argc > 1){
-        if(!strncmp(argv[1], "sim", 3))
+    int p = 1;
+    while(p<argc)
+    {
+        // Connection type
+        if(!strncmp(argv[p], "sim", 3)){
             connectionMode=SIMULATION;
-        else if(!strncmp(argv[1], "wifi", 4))
+            p++;
+        }else if(!strncmp(argv[p], "wifi", 4)){
             connectionMode=WIFI;
-        else if(!strncmp(argv[1], "serial", 6))
+            p++;
+        }else if(!strncmp(argv[p], "serial", 6)){
             connectionMode=SERIAL;
-    }
+            p++;
+        }
 
-    if(argc > 2){
-        if (!strncmp(argv[2], "-R", 2)){
+        // Recording
+        if (!strncmp(argv[p], "-R", 2) || (!strncmp(argv[p], "-r", 2) ) ){
             logMode = RECORDING;
-        }else if (!strncmp(argv[2], "-r", 2)) {
-            logMode = RECORDING;
+            std::cout << "We are recording the robot path and sensor observations." << std::endl;
+            p++;
+            continue;
         }
-        else if (!strncmp(argv[2], "-p", 2)) {
+
+        // playing back from previous file
+        if (!strncmp(argv[p], "-p", 2) || (!strncmp(argv[p], "-P", 2)) ) {
             logMode = PLAYBACK;
-            filename = argv[3];
+            if(argc >=p+1 ) {
+                filename = argv[p+1];
+                p+=2;
+                continue;
+            } else {
+                std::cout << "Please, provide the file name of the recorded path." << std::endl;
+                exit(0);
+            }
         }
-        else if (!strncmp(argv[2], "-P", 2)){
-            logMode = PLAYBACK;
-            filename = argv[3];
-        }else if(!strncmp(argv[4], "-n", 2)){
-            logMode = NONE;
+
+        if (!strncmp(argv[p], "-m", 2) || (!strncmp(argv[p], "-M", 2)) ) {
+            if(argc >=p+1 ) {
+                mapName = argv[p+1];
+                p+=2;
+                continue;
+            } else {
+                std::cout << "Please, provide the file name of the map." << std::endl;
+                exit(0);
+            }
         }
+
     }
 
     pthread_t robotThread, glutThread, potentialThread;

@@ -14,6 +14,7 @@ class GlutClass
         void terminate();
 
         void writeViewModeName(int x, int y);
+        void writeMCLModeName(int x, int y);
         void screenshot();
 
         void setRobot(Robot* r);
@@ -23,8 +24,9 @@ class GlutClass
         int glutWindowSize;
         int frame;
 
-        int halfWindowSize;
-        int x_aux, y_aux;
+        int halfWindowSize, x_aux, y_aux;
+        int halfWindowSize_MCL, x_aux_MCL, y_aux_MCL;
+        bool viewingMCL;
 
     private:
         GlutClass ();
