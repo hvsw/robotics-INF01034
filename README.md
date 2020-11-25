@@ -68,20 +68,20 @@ No simulador é preciso escolher um mapa. Use o mapa `3loops.map`, disponível n
 # Controles do framework
 
 -- modos de movimentação
-1 : controle manual simples (velocidades fixas)
-2 : controle manual velocidade linear (CIMA e BAIXO) e vel. angular (ESQ e DIR)
-3 : avoid obstacles
-4 : wall following
+`1`: controle manual simples (velocidades fixas)
+`2`: controle manual velocidade linear (CIMA e BAIXO) e vel. angular (ESQ e DIR)
+`3`: avoid obstacles
+`4`: wall following
 
-CIMA, BAIXO, ESQ, DIR : move o robô
+`CIMA`, `BAIXO`, `ESQ`, `DIR`: move o robô
 
-W, A, S, D : move a camera
+`W`, `A`, `S`, `D` : move a camera
 
-+ e - : altera zoom da camera
-L     : fixa a camera novamente sobre o robô, ou deixa a camera fixa no ponto atual do mapa onde o robô está
+`+` e `-`: altera zoom da camera
+`L`: fixa a camera novamente sobre o robô, ou deixa a camera fixa no ponto atual do mapa onde o robô está
 
-V e B : altera visualização do mapa
-R     : altera visualização dos sensores (sonar cone -> sonar linha -> laser linha -> laser area -> somente robô) 
-G     : mostra valor associado a cada celula do mapa
+`V` e `B` : altera visualização do mapa
+`R`: altera visualização dos sensores (sonar cone -> sonar linha -> laser linha -> laser area -> somente robô) 
+`G`: mostra valor associado a cada celula do mapa
 
 ESC   : fecha programa
