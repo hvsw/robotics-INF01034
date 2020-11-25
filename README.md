@@ -1,3 +1,9 @@
+# Notas
+Etapa 1/4: 100/100
+Etapa 2/4: 100/100
+Etapa 3/4: 100/100
+Etapa 4/4: 95/100
+
 # INSTALAÇÃO NO UBUNTU 18.04
 
 Primeiramente, é preciso instalar a biblioteca ARIA e o simulador MobileSim
